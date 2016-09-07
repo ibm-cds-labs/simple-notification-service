@@ -1,0 +1,29 @@
+{
+  "name": "simple-notification-service",
+  "version": "1.0.0",
+  "description": "A realtime microservice to allow the sending of realtime notifications between apps",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MattCollins84/simple-notification-service.git"
+  },
+  "author": "MattCollins84",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/MattCollins84/simple-notification-service/issues"
+  },
+  "homepage": "https://github.com/MattCollins84/simple-notification-service#readme",
+  "dependencies": {
+    "async": "^2.0.1",
+    "body-parser": "^1.15.2",
+    "cfenv": "^1.0.3",
+    "express": "^4.14.0",
+    "internal-ip": "^1.2.0",
+    "md5": "^2.2.1",
+    "rethinkdb": "^2.3.3",
+    "socket.io": "^1.4.8"
+  }
+}

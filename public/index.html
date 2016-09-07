@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>Simple Notification Service</title>
+
+    <script src="http://localhost:6008/client.js"></script>
+    <script>
+
+      var SNS = new SNSClient({
+        userData: {
+          name: "Matt",
+          age: 32,
+          company: "IBM"
+        },
+        userQuery: {
+          company: "IBM"
+        }
+      });
+
+      SNS.events.on('connected', function() {
+        console.log("connected event")
+      })
+
+      SNS.events.on('msg', function(msg) {
+        console.log("msg event", msg)
+      })
+
+      SNS.events.on('currentUsers', function(users) {
+        console.log("currentUsers event", users)
+      })
+
+      SNS.events.on('connectedUser', function(user) {
+        console.log("connectedUser event", user)
+      })
+
+      SNS.events.on('disconnectedUser', function(user) {
+        console.log("disconnectedUser event", user)
+      })
+      
+    </script>
+
+  </head>
+
+  <body>
+
+
+  </body>
+</html>

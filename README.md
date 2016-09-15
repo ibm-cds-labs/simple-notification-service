@@ -36,9 +36,7 @@ Finally, once the service is running, you will need to include the client librar
 
 And now your app is SNS enabled! Keep on reading to find out how to use the SNS in your app.
 
-## API
-
-### Connecting
+## Connecting
 When connecting to the SNS, you should supply two different pieces of information:
 
 * Some `userData`
@@ -79,7 +77,7 @@ And we have asked to be informed about the connection/disconnections of any othe
 
 > _**note:** a user must have **ALL** of the attributes defined in the `userQuery` in order to match, however it is not required that a user matches **EXACTLY**, and can have attributes defined that are not in the `userQuery`_
 
-### SNS.send( userQuery, notificationData )
+## SNS.send( userQuery, notificationData )
 The `userQuery` is used to identify recipients of the notification.
 
 The below example will send a JSON object with a `chat_msg` property to any connected user who has a `user_type` of `chat`.
@@ -90,10 +88,10 @@ SNS.send( { user_type: "chat" }, { chat_msg: "Hello, world!" } )
 
 The `userQuery` used to send a notification can be different to the `userQuery` defined at connection time.
  
-### Events
+## Events
 Once connected there are a number of events that can be triggered and acted upon.
 
-#### Event:connected
+### Event:connected
 The connected event is very simple, and just alerts the user to the fact they have successfully connected to the SNS.
 
 ````javascript
@@ -102,7 +100,7 @@ SNS.on('connected', function() {
 })
 ````
 
-#### Event:currentUsers
+### Event:currentUsers
 On connection, the supplied `userQuery` is used to find any other currently connected users that this user is interested in (i.e. Match the `userQuery`). This will trigger the `currentUsers` event.
 
 ````javascript
@@ -113,7 +111,7 @@ SNS.on('currentUsers', function(users) {
 
 An array of users is passed along with this event, where each element of the array is a JSON object containing the `userData` of each matched user.
 
-#### Event:connectedUser
+### Event:connectedUser
 When a new user connects that matches the supplied `userQuery`, it will trigger the `connectedUser` event.
 
 ````javascript
@@ -124,7 +122,7 @@ SNS.on('connectedUser', function(user) {
 
 A JSON object containing the `userData` of the connecting user is passed in the `user` parameter.
 
-#### Event:disconnectedUser
+### Event:disconnectedUser
 When a new user disconnects that matches the supplied `userQuery`, it will trigger the `disconnectedUser` event.
 
 ````javascript
@@ -135,7 +133,7 @@ SNS.on('disconnectedUser', function(user) {
 
 A JSON object containing the `userData` of the disconnecting user is passed in the `user` parameter.
 
-#### Event:notification
+### Event:notification
 When a new notification is received, it will trigger the `notification` event.
 
 ````javascript
@@ -145,7 +143,7 @@ SNS.on('notification', function(notification) {
 ````
 The `notification` parameter will contain the notification information.
 
-### Historical Data
+## Historical Data
 Historical notifications can be retrieved by using the `GET /historical` HTTP endpoint.
 
 Requests to the `GET /historical` endpoint will parse the query string to create a `userQuery`. For example, the following request will return historical notifications where the `userQuery` for this notification contains `user_type: chat`.

@@ -1,9 +1,11 @@
 "use strict"
+
 /*****
 	Express and Socket.IO
 *****/
 const express = require('express');
 const app = express();
+const cors = require('cors');
 const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const fs = require('fs');
@@ -20,89 +22,45 @@ const bpUrlencoded = bodyParser.urlencoded({ extended: true});
 /*****
 	Other stuff
 *****/
-const md5 = require('md5');
 const async = require('async');
-
-/*****
-	Find IP info
-*****/
-const publicIP = appEnv.url || require('internal-ip').v4() + ":3000";
+const hash = require('./lib/hash.js')
+const createSingleHash 		= hash.createSingleHash;
+const db 									=	require('./lib/db.js');
+const cleanupFrequency		=	60; //seconds
 
 /*****
 	RethinkDB
 *****/
 const r = require("rethinkdb");
-
-// Local connection Object
-const connection = {
-	db: "test"
-}
-
-const getCombinations = function(chars) {
-  var result = [];
-  var f = function(prefix, chars) {
-    for (var i = 0; i < chars.length; i++) {
-      result.push(prefix + chars[i]);
-      f(prefix + chars[i], chars.slice(i + 1));
-    }
-  }
-  f('', chars);
-  return result;
-}
-
-const createUniqueHashes = function(obj) {
-
-	if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
-		obj = {};
-	}
-
-	// make sure we don't go multi level
-	obj = Object.keys(obj).reduce(function(previous, current) {
-    if (typeof obj[current] !== "object") {
-    	previous[current] = obj[current]
-    }
-    return previous;
-	}, {});
-
-	// get our items in 'key-value' style, sorted alphabetically
-	let items = Object.keys(obj)
-							.map(key => `${key}-${obj[key]}/`)
-							.sort();
-
-	// get the different combinations of these items
-	let combos = getCombinations(items)
-							 .map(e => md5(e.replace(/\/$/, '')));
-
-	return combos;
-
-}
-
-const createSingleHash = function(obj) {
-
-	return md5(
-			Object.keys(obj)
-		 	.map(key => `${key}-${obj[key]}`)
-		 	.sort()
-		 	.join("/")
-	);
-
-}
-
-// Compose connection Object
-// const connection = {
-//   host: "<host>",
-//   port: <port>,
-//   user: "<user>",
-//   password: "<password>",
-//   ssl: {
-//     ca: new Buffer(fs.readFileSync('/path/to/cert.ca', "utf8"))
-//   },
-// 	 db: "<db name>"
-// }
+const rOpts = require('./lib/config.js').connection
 
 /*****
 	API endpoints
 *****/
+
+app.get('/historical', cors(), (req, res) => {
+
+	r.connect(rOpts, (err, conn) => {
+
+    if (err) return;
+
+    db.getHistorical(conn, req.query, (err, messages) => {
+
+    	if (err) return res.status(404).send({
+    		success: false,
+    		error: err
+    	})
+
+    	res.send({
+    		success: true,
+    		notifications: messages.map(msg => msg.message)
+    	})
+
+    })
+
+  })
+
+})
 
 /*****
 	IO Stuff
@@ -115,15 +73,11 @@ io.on('connect', socket => {
 	// this will help us tidy up the users table later
 	socket.conn.on('heartbeat', function() {
     
-    r.connect(connection, (err, conn) => {
+    r.connect(rOpts, (err, conn) => {
 
     	if (err) return;
 
-    	r.table("users")
-    	.get(socket.id)
-    	.update({heartbeat: r.now()})
-    	.run(conn, (err, cursor) => {
-    		console.log(`updated heartbeat data for ${socket.id}`)
+    	db.updateHeartbeat(conn, socket.id, () => {
     		conn.close()
     	})
 
@@ -143,7 +97,7 @@ io.on('connect', socket => {
 		data.userData._socket_id = socket.id
 
 		// stash them in the DB
-		r.connect(connection, (err, conn) => {
+		r.connect(rOpts, (err, conn) => {
 
 			if (err) return;
 
@@ -152,73 +106,14 @@ io.on('connect', socket => {
 			// insert the user
 			actions.insertUser = (callback) => {
 
-				r.table("users").insert({
-					id: socket.id,
-					userData: data.userData,
-					userHashes: createUniqueHashes(data.userData),
-					queryHashes: createSingleHash(data.userQuery),
-					heartbeat: r.now()
-				})
-				.run(conn, (err, cursor) => {
-					return callback(err, (err || true));
-				})
+				db.insertUser(conn, data, socket.id, callback)
 
 			}
 
 			// find who else is connected that we care about
 			actions.fetchConnected = (callback) => {
 
-				r.table("users")
-				.getAll(createSingleHash(data.userQuery), {index: "userHashes"})('userData')
-				.coerceTo("array")
-				.run(conn, (err, cursor) => {
-
-					if (err) return callback(err);
-
-					cursor.toArray((err, users) => {
-
-						users = users.filter(user => {
-							if (user._socket_id == socket.id) {
-								return false
-							}
-							return true;
-						});
-
-						return callback(null, users)
-					})
-
-				})
-
-			}
-
-			// find who else is connected that cares about us
-			actions.sendConnected = (callback) => {
-
-				r.table("users")
-				.getAll(
-					r.args(createUniqueHashes(data.userData)),
-					{ index: "queryHashes" }
-				)('id')
-				.coerceTo("array")
-				.run(conn, (err, cursor) => {
-
-					if (err) return callback(err);
-
-
-					cursor.toArray((err, users) => {
-
-						users = users.filter(id => {
-							if (id == socket.id) {
-								return false
-							}
-							return true;
-						});
-
-						return callback(null, users)
-
-					})
-
-				})
+				db.fetchConnected(conn, data, socket.id, callback)
 
 			}
 
@@ -231,13 +126,6 @@ io.on('connect', socket => {
 					socket.emit('currentUsers', results.fetchConnected)
 				}
 
-				// send this clients userData to any connected user whose userQuery matches this clients userData
-				if (typeof results.sendConnected == "object" && results.sendConnected.length >= 0) {
-					results.sendConnected.forEach(id => {
-						io.to(id).emit("connectedUser", data.userData)
-					})
-				}
-
 			})
 
 		})
@@ -247,84 +135,12 @@ io.on('connect', socket => {
 	// when the socket disconnects, remove by socket ID
 	socket.on('disconnect', () => {
 		
-		console.log(`${socket.id} disconnected...`)
+		console.log(`${socket.id} disconnected...`);
 
-		let actions = {}
-		let userData = null;
+		r.connect(rOpts, (err, conn) => {
 
-		r.connect(connection, (err, conn) => {
-
-			if (err) return;
-		
-			actions.getUser = (callback) => {
-
-				r.table("users")
-				.get(socket.id)
-				.run(conn, (err, user) => {
-					
-					if (err) return callback(err);
-
-					if (user === null) return callback(true);
-
-					userData = user.userData;
-					return callback(null, user)
-
-				})
-
-			}
-
-			actions.deleteUser = (callback) => {
-
-				r.table("users").get(socket.id).delete()
-				.run(conn, (err, cursor) => {
-					return callback(err, (err?false:true))
-				})
-
-			}
-
-			actions.sendDisconnected = (callback) => {
-
-				r.table("users")
-				.getAll(
-					r.args(createUniqueHashes(userData)),
-					{ index: "queryHashes" }
-				)('id')
-				.coerceTo("array")
-				.run(conn, (err, cursor) => {
-
-					if (err) return callback(err);
-
-
-					cursor.toArray((err, users) => {
-
-						users = users.filter(id => {
-							if (id == socket.id) {
-								return false
-							}
-							return true;
-						});
-
-						return callback(null, users)
-
-					})
-
-				})
-
-			}
-
-			async.series(actions, (err, results) => {
-
+			db.deleteUser(conn, socket.id, (err, success) => {
 				conn.close();
-
-				if (err) return;
-
-				// send this clients userData to any connected user whose userQuery matches this clients userData
-				if (typeof results.sendDisconnected == "object" && results.sendDisconnected.length >= 0) {
-					results.sendDisconnected.forEach(id => {
-						io.to(id).emit("disconnectedUser", results.getUser.userData)
-					})
-				}
-
 			})
 
 		})
@@ -334,7 +150,7 @@ io.on('connect', socket => {
 	// when the client sends a message
 	// determine the Socket IDs to send it to
 	// store this data in the messages table
-	socket.on('msg', msg => {
+	socket.on('notification', msg => {
 
 		let query = msg.query;
 		let data 	= msg.data;
@@ -342,32 +158,18 @@ io.on('connect', socket => {
 		// get our item in 'key-value' style from the query
 		let item = createSingleHash(query);
 
-		r.connect(connection, (err, conn) => {
+		r.connect(rOpts, (err, conn) => {
 
 			if (err) return;
 
-			r.table("users")
-		  .getAll(item, {index: "userHashes"})('id')
-		  .coerceTo('array')
-		  .run(conn, (err, cursor) => {
+			db.saveMessage(conn, item, data, (err, cursor) => {
 
-		  	if (err) return;
+				conn.close();
 
-		  	cursor.toArray((err, ids) => {
+				return;
 
-		  		r.table("messages")
-		  		.insert({
-		  		 	message: data,
-		  		 	ids: ids,
-		  		 	time: r.now()
-		  		})
-		  		.run(conn, (err, cursor) => {
-		  			conn.close()
-		  		})
+			})
 
-		  	})
-
-		  })
 		})
 
 	})
@@ -375,37 +177,61 @@ io.on('connect', socket => {
 })
 
 /*****
-	RethinkDB changefeed
+	RethinkDB changefeeds
 *****/
 
-r.connect(connection, (err, conn) => {
+r.connect(rOpts, (err, conn) => {
 
 	if (err) return;
 
-	// listen to messages table changefeed for incoming messages
-	r.table("messages")
-	.changes()
-	.run(conn, (err, cursor) => {
+	const msgStream = db.messageStream(conn);
 
-		// for each new message
-		cursor.each((err, msg) => {
+	msgStream.on('notification', (data) => {
+		io.to(data.id).emit('notification', data.msg);
+	})
 
-			if (err) return;
+	const userStream = db.userStream(conn);
 
-			if (typeof msg === "object" && typeof msg.new_val === "object" && msg.new_val !== null) {
+	userStream.on('connectingUser', (user) => {
+		
+		db.sendConnected(conn, user, (err, users) => {
 
-				// send the message to identified IDs
-				msg.new_val.ids.forEach(id => {
-					io.to(id).emit('msg', msg.new_val.message)
-				});
-
+			// send this clients userData to any connected user whose userQuery matches this clients userData
+			if (typeof users == "object" && users.length >= 0) {
+				users.forEach(id => {
+					io.to(id).emit("connectedUser", user.userData)
+				})
 			}
 
 		})
 
 	})
 
+	userStream.on('disconnectingUser', (user) => {
+		
+		db.sendDisconnected(conn, user, (err, users) => {
+
+			// send this clients userData to any connected user whose userQuery matches this clients userData
+			if (typeof users == "object" && users.length >= 0) {
+				users.forEach(id => {
+					io.to(id).emit("disconnectedUser", user.userData)
+				})
+			}
+
+		})
+
+	})
+
+	/*****
+		Tidy up old users
+		(re-using the changefeed connection)
+	****/
+	setInterval(() => {
+		db.removeOldUsers(conn, cleanupFrequency);
+	}, (cleanupFrequency * 1000))
+
 })
+
 
 /*****
 	FRONT END

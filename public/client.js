@@ -13,12 +13,13 @@ var _sns_host = document.currentScript.src.replace(/\/client.js$/, '')
 function SNSClient(opts) {
   
   this.host = _sns_host;
-  this.connected = false;
   this.https = (this.host.match(/^https/) ? true : false)
   this.userData = opts.userData || null
   this.userQuery = opts.userQuery || null
   this.socket = null;
   this.events = new EventEmitter();
+  this.events.id = null;
+  this.events.connected = false;
 
   /*** Code to async load JS ***/
   this.addScript = function(elm, evType, fn, useCapture) {
@@ -69,17 +70,18 @@ function SNSClient(opts) {
 		/*
 		 *  Handle Socket.IO events
 		 */
-	
-		// provide descriptive data on connection
-		this.socket.on('connect', function(data) {
-      this.connected = true;
-			this.socket.emit('myData', { userData: this.userData, userQuery: this.userQuery})
+
+    // provide descriptive data on connection
+    this.socket.on('connect', function() {
+      this.events.connected = true;
+      this.socket.emit('myData', { userData: this.userData, userQuery: this.userQuery})
+      this.events.id = "/#" + this.socket.id;
       this.events.emitEvent('connected');
-		}.bind(this));
+    }.bind(this));
 	
 		// listen for incoming messages
-		this.socket.on('msg', function(data) {
-			this.events.emitEvent('msg', [data]);
+		this.socket.on('notification', function(data) {
+			this.events.emitEvent('notification', [data]);
 		}.bind(this));
 
     // listen for the currently connected users (that we care about, when we connect)
@@ -96,10 +98,7 @@ function SNSClient(opts) {
     this.socket.on("disconnectedUser", function(user) {
       this.events.emitEvent('disconnectedUser', [user]);
     }.bind(this))
-  
-    
 			
-		// });
   }.bind(this));
   
   /*
@@ -109,13 +108,17 @@ function SNSClient(opts) {
   // websocket API send request
   this.send = function(query, data) {
 
-    if (this.connected === false) {
+    if (this.events.connected === false) {
       throw 'SNS: not connected';
       return;
     }
     
-    this.socket.emit('msg', { query: query, data: data })
+    this.socket.emit('notification', { query: query, data: data })
     
   }.bind(this);
+
+  this.events.send = this.send;
+
+  return this.events
 
 }

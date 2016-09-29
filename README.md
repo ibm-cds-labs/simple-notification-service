@@ -9,6 +9,8 @@ The Simple Notification Service (SNS) is a scalable, queryable, realtime notific
 
 The SNS is built with [Node.JS](http://nodejs.org) and [RethinkDB](http://www.rethinkdb.com) in order to be highly scalable.
 
+[EventEmitter](https://github.com/Olical/EventEmitter) for the browser is also used to help handle events on the client side.
+
 ## Setup
 You will need Node `4.4.x` and a running instance of RethinkDB. You can download and run RethinkDB locally if you wish - or you can spin up a managed cluster at [Compose](http://www.compose.com) for free, for 30 days.
 
@@ -18,7 +20,7 @@ Next up, you will need to edit the `lib/config.js` file. In this file we define 
 
 The first definition can be used to connect to a locally running instance of RethinkDB, and uses the default `test` database.
 
-The second (and commented out) deinition can be used to connect to RethinkDB via Compose. If you are using compose, uncomment this definition and fill in your connection details from the Compose dashboard.
+The second (and commented out) definition can be used to connect to RethinkDB via Compose. If you are using compose, uncomment this definition and fill in your connection details from the Compose dashboard.
 
 Once this is done, we need to create some tables and define some indexes to help make things run smoothly. To do this, we have provided a setup script:
 

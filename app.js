@@ -237,10 +237,6 @@ r.connect(rOpts, (err, conn) => {
 	FRONT END
 *****/
 
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
-});
-
 // serve static files from /public
 app.use(express.static(__dirname + '/public'));
 

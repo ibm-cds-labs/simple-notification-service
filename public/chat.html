@@ -58,7 +58,7 @@
 
               SNS = setupSNS(name);
 
-              $.get('http://localhost:6008/historical?type=chat')
+              $.get('/historical?type=chat')
               .complete(function(data) {
                 
                 if (data.responseJSON.success) {

@@ -34,7 +34,7 @@ const cleanupFrequency		=	60; //seconds
 *****/
 const r = require("rethinkdb");
 const rOpts = require('./lib/config.js').connection
-
+console.log(rOpts);
 /*****
 	API endpoints
 *****/

@@ -1,0 +1,17 @@
+---
+declared-services:
+  sns-rethinkdb:
+    label: compose-for-rethinkdb
+    plan: Standard
+applications:
+- name: simple-notification-service-${random-word}
+  path: .
+  instances: 1
+  disk_quota: 512M
+  memory: 256M
+  host: simple-notification-service-${random-word}
+  domain: mybluemix.net
+  random-route: true
+  command: node app.js
+  services:
+  - sns-rethinkdb

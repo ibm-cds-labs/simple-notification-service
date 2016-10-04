@@ -80,9 +80,14 @@ function SNSClient(opts) {
     }.bind(this));
 	
 		// listen for incoming messages
-		this.socket.on('notification', function(data) {
-			this.events.emitEvent('notification', [data]);
-		}.bind(this));
+    this.socket.on('notification', function(data) {
+      this.events.emitEvent('notification', [data]);
+    }.bind(this));
+
+    // listen for incoming message event (used for front-end, undocumented)
+    this.socket.on('notificationPing', function() {
+      this.events.emitEvent('notificationPing');
+    }.bind(this));
 
     // listen for the currently connected users (that we care about, when we connect)
     this.socket.on("currentUsers", function(users) {

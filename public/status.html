@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>SNS Status</title>
+
+    <script src="/js/jquery-2.2.4.min.js"></script>
+    <script src="http://localhost:6008/client.js"></script>
+    <script>
+
+      var SNS;
+      var users = {}
+      var sent = 0;
+      $(document).ready(function() {
+
+        // when page is ready
+        SNS = new SNSClient({
+          userData: {
+            type: "_ui_status"
+          },
+          userQuery: {}
+        })
+
+        SNS.on('currentUsers', function(u) {
+          u.forEach(function(user) {
+            users[user._socket_id] = true
+          })
+          $('#connected').text(Object.keys(users).length)
+        })
+
+        SNS.on('connectedUser', function(user) {
+          users[user._socket_id] = true;
+          $('#connected').text(Object.keys(users).length)
+        })
+
+        SNS.on('disconnectedUser', function(user) {
+          delete users[user._socket_id];
+          $('#connected').text(Object.keys(users).length)
+        })
+
+        SNS.on('notificationPing', function() {
+          sent++;
+          $('#sent').text(sent)
+        })
+
+        $.get('/count')
+        .complete(function(data) {
+          
+          if (data.responseJSON.success) {
+            sent += data.responseJSON.count
+          }
+
+          $('#sent').text(sent);
+
+        });
+
+      })
+      
+    </script>
+
+  </head>
+
+  <body>
+
+    <h1>Status</h1>
+
+    <h2><span id="connected"></span> connected users</h2>
+
+    <h2><span id="sent"></span> notifications sent</h2>
+
+  </body>
+</html>

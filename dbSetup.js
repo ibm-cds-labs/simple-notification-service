@@ -40,8 +40,8 @@ actions.createUsersTable = (callback) => {
 
 		r.tableCreate("users")
 		.run(conn, (err, cursor) => {
-			console.log("- Creating users table... " + (err?"FAILED":"SUCCESS"))
-			return callback(err, (err?false:true))
+			console.log("- Creating users table... " + (err?err.msg:"SUCCESS"))
+			return callback(null, (err?false:true))
 		})
 
 	})
@@ -55,8 +55,8 @@ actions.createMessagesTable = (callback) => {
 
 		r.tableCreate("messages")
 		.run(conn, (err, cursor) => {
-			console.log("- Creating messages table... " + (err?"FAILED":"SUCCESS"))
-			return callback(err, (err?false:true))
+			console.log("- Creating messages table... " + (err?err.msg:"SUCCESS"))
+			return callback(null, (err?false:true))
 		})
 
 	})
@@ -71,8 +71,8 @@ actions.createQueryHashIndex = (callback) => {
 		r.table("users")
 		.indexCreate("queryHash")
 		.run(conn, (err, cursor) => {
-			console.log("- Creating queryHash index... " + (err?"FAILED":"SUCCESS"))
-			return callback(err, (err?false:true))
+			console.log("- Creating queryHash index... " + (err?err.msg:"SUCCESS"))
+			return callback(null, (err?false:true))
 		})
 
 	})
@@ -87,8 +87,8 @@ actions.createUserHashesIndex = (callback) => {
 		r.table("users")
 		.indexCreate("userHashes", { multi: true })
 		.run(conn, (err, cursor) => {
-			console.log("- Creating userHashes index... " + (err?"FAILED":"SUCCESS"))
-			return callback(err, (err?false:true))
+			console.log("- Creating userHashes index... " + (err?err.msg:"SUCCESS"))
+			return callback(null, (err?false:true))
 		})
 
 	})
@@ -103,8 +103,8 @@ actions.createRecipientHashIndex = (callback) => {
 		r.table("messages")
 		.indexCreate("recipientHash")
 		.run(conn, (err, cursor) => {
-			console.log("- Creating recipientHash index... " + (err?"FAILED":"SUCCESS"))
-			return callback(err, (err?false:true))
+			console.log("- Creating recipientHash index... " + (err?err.msg:"SUCCESS"))
+			return callback(null, (err?false:true))
 		})
 
 	})
@@ -119,8 +119,8 @@ actions.createTimeIndex = (callback) => {
 		r.table("messages")
 		.indexCreate("time")
 		.run(conn, (err, cursor) => {
-			console.log("- Creating time index... " + (err?"FAILED":"SUCCESS"))
-			return callback(err, (err?false:true))
+			console.log("- Creating time index... " + (err?err.msg:"SUCCESS"))
+			return callback(null, (err?false:true))
 		})
 
 	})

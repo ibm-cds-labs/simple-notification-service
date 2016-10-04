@@ -1,0 +1,24 @@
+.hidden {
+	display: none;
+}
+
+.invisible {
+	visibility: hidden;
+}
+
+.mt20 {
+	margin-top: 20px;
+}
+
+.mb20 {
+	margin-bottom: 20px;
+}
+
+.mr10 {
+	margin-right: 10px;
+}
+
+input.input-err {
+	border: 1px solid #a94442;
+	background: #f9d4d3;
+}

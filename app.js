@@ -10,7 +10,8 @@ const http = require('http').Server(app);
 const io = require('socket.io')(http);
 const fs = require('fs');
 const cfenv = require('cfenv');
-const	appEnv = cfenv.getAppEnv()
+const	appEnv = cfenv.getAppEnv();
+const dbSetup = require('./lib/config.js').dbSetup;
 
 /*****
 	Bodyparser etc... for POST requests
@@ -54,6 +55,30 @@ app.get('/historical', cors(), (req, res) => {
     	res.send({
     		success: true,
     		notifications: messages.map(msg => msg.message)
+    	})
+
+    })
+
+  })
+
+})
+
+app.get('/count', cors(), (req, res) => {
+
+	r.connect(rOpts, (err, conn) => {
+
+    if (err) return;
+
+    db.getMessageCount(conn, (err, count) => {
+
+    	if (err) return res.status(404).send({
+    		success: false,
+    		error: err
+    	})
+
+    	res.send({
+    		success: true,
+    		count: count
     	})
 
     })
@@ -174,75 +199,94 @@ io.on('connect', socket => {
 
 	})
 
-})
-
-/*****
-	RethinkDB changefeeds
-*****/
-
-r.connect(rOpts, (err, conn) => {
-
-	if (err) return;
-
-	const msgStream = db.messageStream(conn);
-
-	msgStream.on('notification', (data) => {
-		io.to(data.id).emit('notification', data.msg);
-	})
-
-	const userStream = db.userStream(conn);
-
-	userStream.on('connectingUser', (user) => {
-		
-		db.sendConnected(conn, user, (err, users) => {
-
-			// send this clients userData to any connected user whose userQuery matches this clients userData
-			if (typeof users == "object" && users.length >= 0) {
-				users.forEach(id => {
-					io.to(id).emit("connectedUser", user.userData)
-				})
-			}
-
-		})
-
-	})
-
-	userStream.on('disconnectingUser', (user) => {
-		
-		db.sendDisconnected(conn, user, (err, users) => {
-
-			// send this clients userData to any connected user whose userQuery matches this clients userData
-			if (typeof users == "object" && users.length >= 0) {
-				users.forEach(id => {
-					io.to(id).emit("disconnectedUser", user.userData)
-				})
-			}
-
-		})
-
-	})
-
-	/*****
-		Tidy up old users
-		(re-using the changefeed connection)
-	****/
-	setInterval(() => {
-		db.removeOldUsers(conn, cleanupFrequency);
-	}, (cleanupFrequency * 1000))
-
-})
-
+});
 
 /*****
 	FRONT END
 *****/
 
+app.get('/chat', (req, res) => {
+  res.sendFile(__dirname + '/public/chat.html');
+});
+
+app.get('/status', (req, res) => {
+  res.sendFile(__dirname + '/public/status.html');
+});
+
 // serve static files from /public
 app.use(express.static(__dirname + '/public'));
 
-/*****
-	Listening
-*****/
-http.listen(appEnv.port, ( appEnv.bind == "localhost" ? null : appEnv.bind ), () => {
-  console.log(`listening on ${appEnv.url || publicIP}`);
-});
+// attempt to set up the DB before running the app.
+dbSetup(() => {
+
+	/*****
+		RethinkDB changefeeds
+	*****/
+
+	r.connect(rOpts, (err, conn) => {
+
+		if (err) return;
+
+		const msgStream = db.messageStream(conn);
+
+		msgStream.on('notification', (data) => {
+			io.to(data.id).emit('notification', data.msg);
+		})
+
+		msgStream.on('notificationPing', () => {
+			io.emit('notificationPing');
+		})
+
+		const userStream = db.userStream(conn);
+
+		userStream.on('connectingUser', (user) => {
+			
+			db.sendConnected(conn, user, (err, users) => {
+
+				// send this clients userData to any connected user whose userQuery matches this clients userData
+				if (typeof users == "object" && users.length >= 0) {
+					users.forEach(id => {
+						io.to(id).emit("connectedUser", user.userData)
+					})
+				}
+
+			})
+
+		})
+
+		userStream.on('disconnectingUser', (user) => {
+			
+			db.sendDisconnected(conn, user, (err, users) => {
+
+				// send this clients userData to any connected user whose userQuery matches this clients userData
+				if (typeof users == "object" && users.length >= 0) {
+					users.forEach(id => {
+						io.to(id).emit("disconnectedUser", user.userData)
+					})
+				}
+
+			})
+
+		})
+
+		/*****
+			Tidy up old users
+			(re-using the changefeed connection)
+		****/
+		db.removeOldUsers(conn, cleanupFrequency);
+		setInterval(() => {
+			db.removeOldUsers(conn, cleanupFrequency);
+		}, (cleanupFrequency * 1000))
+
+	})
+
+	/*****
+		Listening
+	*****/
+	http.listen(appEnv.port, ( appEnv.bind == "localhost" ? null : appEnv.bind ), () => {
+	  console.log(`listening on ${appEnv.url || publicIP}`);
+	});
+
+})
+
+	

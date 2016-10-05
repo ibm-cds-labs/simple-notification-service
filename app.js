@@ -209,6 +209,18 @@ app.get('/chat', (req, res) => {
   res.sendFile(__dirname + '/public/chat.html');
 });
 
+app.get('/soccer', (req, res) => {
+  res.sendFile(__dirname + '/public/soccer.html');
+});
+
+app.get('/soccer/admin', (req, res) => {
+  res.sendFile(__dirname + '/public/soccer-admin.html');
+});
+
+app.get('/soccer/:id', (req, res) => {
+  res.sendFile(__dirname + '/public/soccer_match.html');
+});
+
 app.get('/status', (req, res) => {
   res.sendFile(__dirname + '/public/status.html');
 });

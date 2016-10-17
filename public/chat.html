@@ -89,7 +89,7 @@
                 return $("form#msgForm div.form-group").addClass("has-error");
               }
 
-              SNS.send({ type: "chat" }, { name: app.name, msg: msg })
+              SNS.send({ type: "chat" }, { name: app.name, msg: msg, ts: new Date().getTime() })
 
               $('#msg').val("");
 

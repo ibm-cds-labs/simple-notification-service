@@ -38,6 +38,10 @@
 	overflow: hidden;
 }
 
+._sns_chat_container._sns_min button {
+	display: none!important;
+}
+
 ._sns_chat_id_screen {
 	height: 317px;
 	padding: 20px;

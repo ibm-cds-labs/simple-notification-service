@@ -24,7 +24,8 @@ const bpUrlencoded = bodyParser.urlencoded({ extended: true});
 	Other stuff
 *****/
 const async = require('async');
-const hash = require('./lib/hash.js')
+const hash = require('./lib/hash.js');
+const connected = require('./lib/connected.js')
 const createSingleHash 		= hash.createSingleHash;
 const db 									=	require('./lib/db.js');
 const cleanupFrequency		=	60; //seconds
@@ -34,10 +35,42 @@ const cleanupFrequency		=	60; //seconds
 *****/
 const r = require("rethinkdb");
 const rOpts = require('./lib/config.js').connection
-console.log(rOpts);
+
 /*****
 	API endpoints
 *****/
+
+app.post('/notification', cors(), bpJSON, (req, res) => {
+
+	if (typeof req.body !== "object" || req.body === null) {
+		return res.status(404).send({
+			success: false
+		})
+	}
+
+	let query = req.body.userQuery || {};
+	let data 	= req.body.notification || {};
+
+	// get our item in 'key-value' style from the query
+	let item = createSingleHash(query);
+
+	r.connect(rOpts, (err, conn) => {
+
+		if (err) return;
+
+		db.saveMessage(conn, item, data, (err, cursor) => {
+
+			conn.close();
+
+			return res.send({
+				success: ( err ? false : true )
+			});
+
+		})
+
+	});
+
+})
 
 app.get('/historical', cors(), (req, res) => {
 
@@ -93,6 +126,7 @@ app.get('/count', cors(), (req, res) => {
 io.on('connect', socket => {
 
 	console.log(`${socket.id} connected...`)
+	connected.push(socket.id);
 
 	// flag user as being updated when we receive a heartbeat
 	// this will help us tidy up the users table later
@@ -161,6 +195,7 @@ io.on('connect', socket => {
 	socket.on('disconnect', () => {
 		
 		console.log(`${socket.id} disconnected...`);
+		connected.remove(socket.id);
 
 		r.connect(rOpts, (err, conn) => {
 
@@ -242,6 +277,7 @@ dbSetup(() => {
 		const msgStream = db.messageStream(conn);
 
 		msgStream.on('notification', (data) => {
+			if (!connected.exists(data.id)) return false;
 			io.to(data.id).emit('notification', data.msg);
 		})
 
@@ -258,6 +294,7 @@ dbSetup(() => {
 				// send this clients userData to any connected user whose userQuery matches this clients userData
 				if (typeof users == "object" && users.length >= 0) {
 					users.forEach(id => {
+						if (!connected.exists(id)) return false;
 						io.to(id).emit("connectedUser", user.userData)
 					})
 				}
@@ -273,6 +310,7 @@ dbSetup(() => {
 				// send this clients userData to any connected user whose userQuery matches this clients userData
 				if (typeof users == "object" && users.length >= 0) {
 					users.forEach(id => {
+						if (!connected.exists(id)) return false;
 						io.to(id).emit("disconnectedUser", user.userData)
 					})
 				}

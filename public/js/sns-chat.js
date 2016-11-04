@@ -1,6 +1,6 @@
 var setupSNS = function(name) {
   
-  SNS = new SNSClient("abc123", {
+  SNS = new SNSClient("demokey", {
     userData: {
       name: name,
       type: "chat"

@@ -49,7 +49,7 @@
           methods: {
             init: function() {
               
-              SNS = new SNSClient("abc123", {
+              SNS = new SNSClient("demokey", {
                 userData: {
                   type: "soccer"
                 },
@@ -62,7 +62,7 @@
                 app.updateMatch(n);
               })
 
-              $.get("/abc123/historical?type=soccer")
+              $.get("/demokey/historical?type=soccer")
               .complete(function(data) {
                 if (data.responseJSON && data.responseJSON.success) {
                   data.responseJSON.notifications.reverse().forEach(function(n) {

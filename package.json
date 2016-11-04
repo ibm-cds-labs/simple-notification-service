@@ -25,8 +25,13 @@
     "express": "^4.14.0",
     "internal-ip": "^1.2.0",
     "md5": "^2.2.1",
+    "passport": "^0.3.2",
+    "passport-anonymous": "^1.0.1",
+    "passport-http": "^0.3.0",
     "prompt": "^1.0.0",
+    "request": "^2.78.0",
     "rethinkdb": "^2.3.3",
+    "simple-service-registry": "^0.1.1",
     "socket.io": "^1.4.8"
   }
 }

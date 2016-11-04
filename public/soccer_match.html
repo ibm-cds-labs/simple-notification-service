@@ -58,7 +58,7 @@
                 }
               })
 
-              SNS = new SNSClient({
+              SNS = new SNSClient("abc123", {
                 userData: {
                   type: "soccer"
                 },
@@ -71,7 +71,7 @@
                 app.updateMatch(n);
               })
 
-              $.get("/historical?type=soccer")
+              $.get("/abc123/historical?type=soccer")
               .complete(function(data) {
                 if (data.responseJSON && data.responseJSON.success) {
                   data.responseJSON.notifications.reverse().forEach(function(n) {

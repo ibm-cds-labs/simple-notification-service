@@ -20,7 +20,7 @@
       $(document).ready(function() {
 
         // when page is ready
-        SNS = new SNSClient({
+        SNS = new SNSClient("abc123", {
           userData: {
             type: "_ui_status"
           },
@@ -49,7 +49,7 @@
           $('#sent').text(sent)
         })
 
-        $.get('/count')
+        $.get('/abc123/count')
         .complete(function(data) {
           
           if (data.responseJSON.success) {

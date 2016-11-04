@@ -7,13 +7,15 @@
  /*
  *  SNSClient
  */
-// must capture the host at load time
+// must capture the SNS host at load time
 var _sns_host = document.currentScript.src.replace(/\/client.js$/, '')
 
-function SNSClient(opts) {
+function SNSClient(key, opts) {
   
-  this.host = _sns_host;
-  this.https = (this.host.match(/^https/) ? true : false)
+  this.key = key;
+  this.host = location.hostname;
+  this.sns_host = _sns_host;
+  this.https = (this.sns_host.match(/^https/) ? true : false)
   this.userData = opts.userData || null
   this.userQuery = opts.userQuery || null
   this.socket = null;
@@ -49,13 +51,20 @@ function SNSClient(opts) {
     this.addScript(a, 'load', callback, false);
   }
 		
-  this.load(this.host + "/socket.io/socket.io.js", function() {
+  this.load(this.sns_host + "/socket.io/socket.io.js", function() {
 
     /*
 		 *  Validation
 		 *  Check that we have the required information provided 
 		 */
-	
+	 
+
+    // check an API key has been supplied
+    if (typeof key != "string" || key === "") {
+      throw 'SNS: an API key must be supplied';
+      return;
+    }
+
 		//check that userData is passed in
 		if (typeof opts.userData != "object") {
 			throw 'SNS: You must supply a valid Javascript object in the userData parameter';
@@ -65,7 +74,7 @@ function SNSClient(opts) {
 		/*
 		 *  Connect to Socket.IO server
 		 */
-		this.socket = io(this.host); //our socket.io object
+		this.socket = io(this.sns_host); //our socket.io object
 	
 		/*
 		 *  Handle Socket.IO events
@@ -74,12 +83,20 @@ function SNSClient(opts) {
     // provide descriptive data on connection
     this.socket.on('connect', function() {
       this.events.connected = true;
-      this.socket.emit('myData', { userData: this.userData, userQuery: this.userQuery})
+      this.socket.emit('myData', { userData: this.userData, userQuery: this.userQuery, authentication: { key: this.key, hostname: this.host } })
       this.events.id = "/#" + this.socket.id;
       this.events.emitEvent('connected');
     }.bind(this));
 	
-		// listen for incoming messages
+		// listen for authentication fail
+    this.socket.on('authenticationFail', function(err) {
+      this.socket.disconnect();
+      this.events.id = null;
+      this.events.connected = false;
+      throw new Error("SNS: Failed to authenticate");      
+    }.bind(this));
+
+    // listen for incoming messages
     this.socket.on('notification', function(data) {
       this.events.emitEvent('notification', [data]);
     }.bind(this));

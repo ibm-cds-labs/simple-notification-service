@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Soccer Demo Admin | Simple Notification Service</title>
+
+    <link rel="stylesheet" href="/css/master.css" type="text/css">
+
+    <script src="/js/vue.js"></script>
+    <script src="/client.js"></script>
+    <script>
+      (function() {
+        window.addEventListener('DOMContentLoaded', function () {
+          var app = new Vue({
+            el: '#soccerdemoadmin',
+            data: {
+              match: 1,
+              messageType: 'update',
+              homeScore: null,
+              awayScore: null,
+              message: null,
+              matches: [{
+                match_id: 1,
+                home: 'Manchester United',
+                away: 'Liverpool',
+                home_score: 0,
+                away_score: 0
+              }, {
+                match_id: 2,
+                home: 'Barcelona',
+                away: 'Real Madrid',
+                home_score: 0,
+                away_score: 0
+              }]
+            },
+            methods: {
+              init: function() {
+                SNS = new SNSClient('demokey', {
+                  userData: {
+                    type: 'soccer_admin'
+                  },
+                  userQuery: {
+                    type: 'soccer_admin'
+                  }
+                })
+              },
+              send: function(e) {
+                var content = app.message
+                var home_score = app.homeScore
+                var away_score = app.awayScore
+
+                // perform some validation if the form hasn't been completed
+                if (content && !isNaN(home_score) && !isNaN(away_score)) {
+                  var data = {
+                    match_id: app.match,
+                    content: content,
+                    home_score: home_score,
+                    away_score: away_score,
+                    type: app.messageType,
+                    ts: new Date().getTime()
+                  }
+
+                  SNS.send({ type: 'soccer' }, data)
+                  SNS.send({ type: 'soccer_match_'+data }, data)
+
+                  setTimeout(function() {
+                    app.message = ''
+                  })
+                }
+              }
+            }
+          });
+
+          app.init();
+
+        })
+      }())
+    </script>
+    <style>
+      .input_select {
+        max-width: 100%;
+      }
+      .button_group {
+        text-align: right;
+      }
+    </style>
+  </head>
+
+  <body class="capped-layout" id="soccerdemoadmin">
+    <header class="capped-layout_cap app-banner">
+      <span class="app-banner_title">Simple Notification Service // Soccer Demo Admin</span>
+    </header>
+
+    <div class="capped-layout_body bookend-layout">
+      <div class="bookend-layout_body theme_light bg_white scrollable-y">
+        <section class="layout_section">
+          <div id="nameform" class="grid_row five-column">
+            <div class="grid_column one">
+            </div>
+            <div class="grid_column three">
+              <section class="layout_section">
+                <form class="form" onsubmit="return false;">
+                  <fieldset class="form_field">
+                    <label class="form_label" for="match">Match</label>
+                    <select class="input_select" name="match" id="match" v-model="match">
+                      <option v-for="match in matches" value="{{ match.match_id }}">{{ match.home }} v {{ match.away }}</option>
+                    </select>
+                  </fieldset>
+                  <fieldset class="form_field">
+                    <label class="form_label" for="messageType">Message Type</label>
+                    <select class="input_select" name="messageType" id="messageType" v-model="messageType">
+                      <option value="update">Update</option>
+                      <option value="goal">Goal</option>
+                    </select>
+                  </fieldset>
+                  <fieldset class="form_field">
+                    <label class="form_label" for="content">Message</label>
+                    <input id="content" class="input_text"  type="text" name="content" v-model="message" required>
+                  </fieldset>
+                  <fieldset class="form_field">
+                    <label class="form_label" for="home_score">Home Score</label>
+                    <input id="home_score" class="input_text"  type="number" name="home_score" v-model="homeScore" min=0>
+                  </fieldset>
+                  <fieldset class="form_field">
+                    <label class="form_label" for="away_score">Away Score</label>
+                    <input id="away_score" class="input_text"  type="number" name="away_score" v-model="awayScore" min=0>
+                  </fieldset>
+                  <div class="button_group">
+                    <button id="sendnotification" type="submit" class="button_primary" v-on:click="send">Send Notification</button>
+                  </div>
+                </form>
+              </section>
+            </div>
+            <div class="grid_column one">
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>

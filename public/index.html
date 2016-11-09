@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>IBM Cloud Data Services | Simple Notification Service</title>
+
+    <link rel="stylesheet" href="css/master.css" type="text/css">
+    <link rel="stylesheet" href="css/sns.css" type="text/css">
+
+    <script src="/js/vue.js"></script>
+    <script src="/js/vue-router.min.js"></script>
+    <script src="/js/vue-resource.min.js"></script>
+    <script src="/client.js"></script>
+    <script src="/js/sns.js"></script>
+  </head>
+
+  <body id="notificationservice" class="capped-layout">
+    <header class="capped-layout_cap app-banner">
+      <a class="app-banner_title" rel="home" href="https://developer.ibm.com/clouddataservices">IBM Cloud Data Services // Dev</a>
+    </header>
+
+    <div class="capped-layout_body bookend-layout">
+      <nav class="bookend-layout_bookend theme_light bg_white">
+        <ul class="tree-nav">
+          <li class="tree-nav_item">
+            <a class="tree-nav_link top-nav" v-link="{path: '/'}">Simple Notification Service</a>
+            <ul class="tree-nav">
+              <li class="tree-nav_item">
+                <a class="tree-nav_link" v-link="{path: '/status'}">Status</a>
+              </li>
+              <li class="tree-nav_item">
+                <a class="tree-nav_link" v-link="{path: '/admin'}">Administration</a>
+              </li>
+              <li class="tree-nav_item">
+                <a class="tree-nav_link" v-link="{path: '/ingredients'}">Ingredients</a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="bookend-layout_body theme_dark scrollable-y">
+        <router-view></router-view>
+      </div>
+    </div>
+
+
+<!-- START template: about -->
+    <script type="text/x-template" id="about">
+      <section class="layout_section">
+        <h1 class="type_heading">
+          <mark class="type_mark">Welcome to the Simple Notification Service!</mark>
+        </h1>
+        <p class="type_copy">
+          The <a class="type_link" target="_blank"
+            href="https://github.com/ibm-cds-labs/simple-notification-service">
+            Simple Notification Service</a> is a scalable, queryable, realtime notification micro
+            service that is designed to provide the realtime infrastructure to allow you to integrate
+            realtime notifications, events and sharing of data within your existing apps.
+        </p>
+      </section>
+      <section class="layout_section">
+        <hr>
+        <h1 class="type_heading">
+          <mark class="type_mark">Sample Applications</mark>
+        </h1>
+        <p class="type_copy">
+          This application includes a couple sample applications to showcase it's
+          functionality and ease of use.
+        </p>
+        <dl>
+          <dt>
+            <a href="/chat" class="type_link" target="_blank">Chat Demo</a>
+          </dt>
+          <dd class="type_copy">
+            The chat demo is a simple application allowing users to connect and communicate with each other in realtime.
+          </dd>
+          <dt>
+            <a href="/soccer" class="type_link" target="_blank">Soccer Demo</a>
+          </dt>
+          <dd class="type_copy">
+            The soccer demo is an implementation of a update system providing realtime soccer match udpates.
+          </dd>
+        </dl>
+      </section>
+    </script>
+<!-- END template: about -->
+
+<!-- START template: status -->
+    <script type="text/x-template" id="status">
+      <section class="layout_section theme_light">
+        <h1 class="type_heading">
+          <mark class="type_mark">Status</mark>
+        </h1>
+        <p class="type_copy">
+          SNS Status
+        </p>
+      </section>
+      <section class="layout_section">
+        <p class="type_subhead">Connected users: <span class="type_mark">{{connected}}</span></p>
+        <p class="type_subhead">Notifications sent: <span class="type_mark">{{sent}}</span></p>
+      </section>
+    </script>
+<!-- END template: status -->
+
+<!-- START template: administration -->
+    <script type="text/x-template" id="admin">
+      <section class="layout_section theme_light">
+        <h1 class="type_heading">
+          <mark class="type_mark">Administration</mark>
+        </h1>
+        <p class="type_copy">
+          Create or delete notification keys 
+        </p>
+      </section>
+      <section class="layout_section">
+        <h2 class="type_heading">Existing Keys</h2>
+        <div class="table_basic-container">
+          <table class="table_basic">
+            <thead>
+              <tr><th>Hostname</th><th>Key</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr v-for="k in keys" id="{{k.id}}"><th>{{k.hostname}}</th><th>{{k.key}}</th><th><a class="type_link" role="button" v-on:click="deleteKey(k.id)">Delete</a></th></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      
+      <section class="layout_section">
+        <hr>
+        <h2 class="type_heading">Add a New Key</h2>
+        <form class="form" onsubmit="return false;">
+          <fieldset class="form_field">
+            <label class="form_label" for="hostname">Hostname</label>
+            <input id="hostname" class="input_text input_wide"  type=text name="hostname" v-model="hostname" required>
+          </fieldset>
+          <fieldset class="form_field">
+            <label class="form_label" for="key">API Key</label>
+            <input id="key" class="input_text input_wide"  type="text" name="key" v-model="key" required>
+          </fieldset>
+          <div class="button_group">
+            <button id="generatekey" type="button" class="button_secondary" v-on:click="generateKey">Generate Key</button>
+            <button id="submitkey" type="submit" class="button_primary" v-on:click="submitKey">Submit</button>
+          </div>
+        </form>
+      </section>
+    </script>
+<!-- END template: administration -->
+
+<!-- START template: ingredients -->
+    <script type="text/x-template" id="ingredients">
+      <section class="layout_section theme_light">
+        <h1 class="type_heading">
+          <mark class="type_mark">Ingredients</mark>
+        </h1>
+        <p class="type_copy">
+          The stuff that's baked in.
+        </p>
+      </section>
+      <section class="layout_section">
+        <dl>
+          <dt>
+            <mark class="type_mark">Runtime</mark>
+          </dt>
+          <dd class="type_copy">
+            This is a Node.js app running on IBM Bluemix. <a href="https://nodejs.org/en/" class="type_link" target="_blank">Node.js</a> code is JavaScript running on the server side. Node.js has a rich collection of add-on libraries that can be baked into your applications using the <a href="https://npmjs.org/" class="type_link">npm</a> package manager. This application uses the <a href="http://expressjs.com/" class="type_link" target="_blank">Express</a> web framework.
+          </dd>
+          <dt>
+            <mark class="type_mark">Storage</mark>
+          </dt>
+          <dd class="type_copy">
+            This application uses <a target="_blank" class="type_link" href="http://www.rethinkdb.com/">RethinkDB</a> to be highly scalable and push realtime updates.
+          </dd>
+          <dt>
+            <mark class="type_mark">Code</mark>
+          </dt>
+          <dd class="type_copy">
+            Simple Notification Service is an open-source project published under the Apache-2.0 license. This means that it is free for you to use, copy or modify in any way. Feel free to download the <a href="https://github.com/ibm-cds-labs/simple-notification-service/" target="_blank" class="type_link">code on Github</a> and alter it to suit your own purposes. Contributions to this project are welcome: either raise an <a href="https://github.com/ibm-cds-labs/simple-notification-service/issues" class="type_link" target="_blank">Issue on Github</a> or if you fix or improve something, <a href="https://github.com/ibm-cds-labs/simple-notification-service#fork-destination-box" class="type_link" target="_blank">Fork the code</a>, alter it and send us a pull request. 
+          </dd>
+          <dt>
+            <mark class="type_mark">Service Discovery</mark>
+          </dt>
+          <dd class="type_copy">
+            Simple Notification Service is one of a suite of example micro services that have been developed by the IBM Cloud Data Services team. It is possible to combine some of these services together to create a larger, distributed system using automated service discovery.
+          </dd>
+        </dl>
+      </section>
+    </script>
+<!-- END template: ingredients -->
+  </body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Soccer Demo | Simple Notification Service</title>
+
+    <link rel="stylesheet" href="/css/master.css" type="text/css">
+    <link rel="stylesheet" href="/demo/soccer/soccer.css" type="text/css">
+
+    <script src="/js/vue.js"></script>
+    <script src="/js/vue-resource.min.js"></script>
+    <script src="/client.js"></script>
+    <script src="/demo/soccer/soccer.js"></script>
+  </head>
+
+  <body class="capped-layout" id="soccerdemo">
+    <header class="capped-layout_cap app-banner">
+      <span class="app-banner_title">Simple Notification Service // Soccer Demo</span>
+    </header>
+
+    <div class="capped-layout_body bookend-layout">
+      <nav class="bookend-layout_bookend theme_dark">
+        <ul class="tree-nav">
+          <li class="tree-nav_item">
+            <a class="tree-nav_link" v-bind:class="{'current': currentMatch === 'all'}" v-on:click="gotoMatch('all')">All Matches</a>
+          </li>
+          <li class="tree-nav_item" v-for="match in matches">
+            <a class="tree-nav_link" v-bind:class="{'current': currentMatch === match.match_id}" v-on:click="gotoMatch(match.match_id)">
+              {{ match.home }} <b>{{ match.home_score }}</b> : <b>{{ match.away_score }}</b> {{ match.away }}
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="bookend-layout_body theme_light bg_white scrollable-y">
+        <section class="layout_section">
+          <h2 class="type_heading type_mark">Live Updates</h2>
+          <div class="soccer-update soccer-update-{{ (update.type == 'update' ? 'info' : 'success') }}" v-for="update in updatesReversed">
+            <div class="update-title bg_light-tint">
+              <span>{{ update.time }}</span>
+              <span>{{ update.type.toUpperCase() }}</span>
+              <span>{{ update.home }} Vs. {{ update.away }}</span>
+            </div>
+            <div class="update-body">
+              <span>{{ update.content }}</span>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>

@@ -454,29 +454,15 @@ io.on('connect', socket => {
 *****/
 
 app.get('/chat', (req, res) => {
-  res.sendFile(__dirname + '/public/chat.html');
+  res.sendFile(__dirname + '/public/demo/chat/chat.html');
 });
 
 app.get('/soccer', (req, res) => {
-  res.sendFile(__dirname + '/public/soccer.html');
+  res.sendFile(__dirname + '/public/demo/soccer/soccer.html');
 });
 
 app.get('/soccer/admin', (req, res) => {
-  res.sendFile(__dirname + '/public/soccer-admin.html');
-});
-
-app.get('/soccer/:id', (req, res) => {
-  res.sendFile(__dirname + '/public/soccer_match.html');
-});
-
-// requires HTTP auth if lockdown=true 
-app.get('/status', isloggedin.auth, (req, res) => {
-  res.sendFile(__dirname + '/public/status.html');
-});
-
-// requires HTTP auth if lockdown=true
-app.get('/admin', isloggedin.auth, (req, res) => {
-  res.sendFile(__dirname + '/public/admin.html');
+  res.sendFile(__dirname + '/public/demo/soccer/admin.html');
 });
 
 // serve static files from /public

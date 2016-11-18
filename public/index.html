@@ -61,8 +61,20 @@
             service that is designed to provide the realtime infrastructure to allow you to integrate
             realtime notifications, events and sharing of data within your existing apps.
         </p>
-      </section>
-      <section class="layout_section">
+        
+        <hr>
+        <h1 class="type_heading">
+          <mark class="type_mark">Getting started</mark>
+        </h1>
+        <p class="type_copy">
+          The first thing you need to do is add some API keys. You can do this from the <a class="type_link" href='/#!/admin'>Administration page</a>.
+        </p>
+        <p class="type_copy">
+          If you are wanting to try out some of our Sample Applications below, then you will need to add an API key where the hostname is <b><em><span id="demo_host"></span></em></b> and the API key is <b><em>demokey</em></b>.
+
+          All API keys are paired to a hostname, so make sure you double check before adding!
+        </p>
+
         <hr>
         <h1 class="type_heading">
           <mark class="type_mark">Sample Applications</mark>
@@ -76,13 +88,28 @@
             <a href="/chat" class="type_link" target="_blank">Chat Demo</a>
           </dt>
           <dd class="type_copy">
-            The chat demo is a simple application allowing users to connect and communicate with each other in realtime.
+            The chat demo is a simple application allowing users to connect and communicate with each other in realtime. This demo will showcase all the features of the SNS - as well as being able to send and receive messages you will be able to see users connect and disconnect as well as seeing who is currently online. Chat history will also be preserved!
+          </dd>
+          <dd class="type_copy">
+            If you want to include this chat room onto your own website or application you can use the chat widget by copying and pasting the below code just above the <code class="">&lt;/body&gt;</code> tag in your HTML:
+
+            <code class="type_codeblock" id="chat_sample">
+&lt;script src="[[HOST]]/client.js"&gt;&lt;/script&gt;
+&lt;link href="[[HOST]]/chat-widget/chat-widget.css" rel="stylesheet"&gt;
+&lt;script src="[[HOST]]/chat-widget/chat-widget.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  new SNSChatWidget("YOUR_API_KEY");
+&lt;/script&gt;
+            </code>
           </dd>
           <dt>
             <a href="/soccer" class="type_link" target="_blank">Soccer Demo</a>
           </dt>
           <dd class="type_copy">
-            The soccer demo is an implementation of a update system providing realtime soccer match udpates.
+            The soccer demo is an implementation of a update system providing realtime soccer match updates. You will need to access the <a href="/soccer/admin" class="type_link" target="_blank">admin panel</a> to trigger the updates.
+          </dd>
+          <dd class="type_copy">
+            This demo shows how you can use the Simple Notification Service to target your notifications. Select the match you wish to view and you will receive only updates for this match, however if you decide you want to follow both matches, you will receive all of the updates.
           </dd>
         </dl>
       </section>
@@ -114,6 +141,9 @@
         </h1>
         <p class="type_copy">
           Create or delete notification keys 
+        </p>
+        <p class="type_copy" v-if="!demokey">
+          <b>It does not look like you have an API key set up for trying out our cool demos, would you like to create one? <a class="type_link" v-on:click="createDemoKey">Yes Please!</a></b>
         </p>
       </section>
       <section class="layout_section">

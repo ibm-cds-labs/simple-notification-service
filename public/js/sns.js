@@ -70,6 +70,7 @@
               }
               _this.$set('sent', sent)
             })
+
         }
       }
     })
@@ -81,7 +82,8 @@
         return {
           keys: [],
           key: '',
-          hostname: ''
+          hostname: '',
+          demokey: false
         }
       },
 
@@ -102,6 +104,15 @@
               _this.$set('keys', keys)
               _this.$set('key', '')
               _this.$set('hostname', '')
+              _this.$set('demokey', false)
+              
+              // determine if we have a demo key set
+              keys.forEach(function(key) {
+                if (key.key == "demokey" && key.hostname == location.hostname) {
+                  _this.$set('demokey', true)
+                }
+              })
+
             })          
         },
         deleteKey: function(id) {
@@ -129,6 +140,18 @@
                 this.initAdmin()
               }
             })
+        },
+        createDemoKey: function() {
+          
+          var newkey = JSON.stringify({hostname: location.hostname, key: "demokey"})
+          this.$http
+          .post('/authkey', newkey)
+          .then(function(res) {
+            if (res.ok) {
+              this.initAdmin()
+            }
+          })
+
         }
       }
     })
@@ -139,7 +162,18 @@
     router.map({
       '/': {
         component: Vue.extend({
-          template: '#about'
+          template: '#about',
+          ready: function() {
+            
+            // set the script hosts to the correct values
+            var s = document.getElementById('chat_sample')
+            s.innerText = s.innerText.replace(/\[\[HOST\]\]/g, location.protocol + '//' + location.host)
+
+            // set the demo host to the correct values
+            var s = document.getElementById('demo_host');
+            s.innerText = location.hostname;
+
+          }
         })
       },
       '/status': {

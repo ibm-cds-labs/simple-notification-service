@@ -1,12 +1,13 @@
 /******
-	EXAMPLE SUPPORT CHAT APP
+	EXAMPLE CHAT WIDGET
 	FOR SIMPLE NOTIFICATION SERVICE
 ******/
-var _sns_chat_host = document.currentScript.src.replace(/\/support-chat.js$/, '');
-function SNSChatSupport() { 
+var _sns_chat_host = document.currentScript.src.replace(/\/chat-widget.js$/, '');
+function SNSChatWidget(key) { 
 
 	this.SNS = null;
 	this.name = null;
+	this.key = key || null;
 
 	// dependencies
 	if (typeof SNSClient != "function") throw new Error("Simple Notification Service not detected and is required")
@@ -18,7 +19,7 @@ function SNSChatSupport() {
 
 	// title bar
 	var title_bar = $("<div>", { class: "_sns_title" });
-	var title_text = $("<p>", { class: "_sns_title_text" }).text("SNS Chat Support")
+	var title_text = $("<p>", { class: "_sns_title_text" }).text("SNS Chat Widget")
 	var min = $("<img>", { src: _sns_chat_host + "/min.png" })
 	title_bar.append(min);
 	title_bar.append(title_text);
@@ -31,7 +32,7 @@ function SNSChatSupport() {
 
 	// create the elements for the ID screen
 	var id_div = $("<div>", { class: "_sns_chat_id_screen", id: "_sns_chat_id_screen"})
-	var welcome = $("<p>").text("Welcome to SNS Chat Support, please enter your name below to get started.")
+	var welcome = $("<p>").text("Welcome to SNS Chat, please enter your name below to get started.")
 	var name_input = $("<input>", { name: "_sns_chat_name", id: "_sns_chat_name", placeholder: "Enter your name..." })
 	var name_button = $("<button>", { name: "_sns_chat_name_submit", id: "_sns_chat_name_submit", type: "button" }).text("Get Started!")
 	var error_msg = $("<p>", { class: "_sns_chat_error _sns_chat_hidden" }).text("Please enter a name of 3 characters or more");
@@ -70,7 +71,7 @@ function SNSChatSupport() {
 
 		// if we have a name, connect to SNS
 		this.name = name;
-		this.SNS = new SNSClient({
+		this.SNS = new SNSClient(this.key, {
 			userData: {
 				type: "chat",
 				name: name

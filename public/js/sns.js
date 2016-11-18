@@ -1,5 +1,8 @@
 (function() {
   window.addEventListener('DOMContentLoaded', function () {
+    
+    var sns;
+
     var shuffle = function(a) {
       var j, x, i
       for (i = a.length; i; i--) {
@@ -18,7 +21,8 @@
         return {
           users: {},
           connected: 0,
-          sent: 0
+          sent: 0,
+          sns: null
         }
       },
 
@@ -26,11 +30,15 @@
         this.initStatus()
       },
 
+      destroyed: function() {
+        this.sns.disconnect();
+      },
+
       methods: {
         initStatus: function() {
           var _this = this
-
-          new SNSClient('demokey', {
+          
+          this.sns = new SNSClient('demokey', {
             userData: {
               type: '_ui_status'
             },

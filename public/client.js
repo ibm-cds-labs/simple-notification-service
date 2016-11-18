@@ -139,7 +139,15 @@ function SNSClient(key, opts) {
     
   }.bind(this);
 
+  // disconnect from the server
+  this.disconnect = function() {
+
+    this.socket.disconnect();
+
+  }.bind(this);
+
   this.events.send = this.send;
+  this.events.disconnect = this.disconnect;
 
   return this.events
 

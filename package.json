@@ -20,6 +20,7 @@
   "dependencies": {
     "async": "^2.0.1",
     "body-parser": "^1.15.2",
+    "cf-deployment-tracker-client": "^0.1.2",
     "cfenv": "^1.0.3",
     "cors": "^2.8.1",
     "express": "^4.14.0",

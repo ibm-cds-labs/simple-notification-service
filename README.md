@@ -207,6 +207,19 @@ And the response would look something like:
 }
 ````
 
+## Demos
+The Simple Notification Service comes with two demos built in, accessible from the homepage.
+
+### Chat
+The first demo is a chat room. This demo showcases all of the features of the SNS - send/receive messages, detect and handle connections/disconnections, and using historical data to preserve chat history.
+
+There is also a copy & paste widget to add chat to any website.
+
+### Live Soccer Scores
+The second demo showcases the ability of the SNS to direct notifications to specific users.
+
+Here you can use an adin panel to update the scores of two soccer matches. End users will either see all updates, or match specific updates, depending on the page they are visiting.
+
 ## Contributing
 The projected is released under the Apache-2.0 license so forks, issues and pull requests are very welcome.
 

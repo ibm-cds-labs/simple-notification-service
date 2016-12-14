@@ -169,7 +169,7 @@ Notifications can also be sent by using the `POST /authentication-key/notificati
 Requests to the `POST /authentication-key/notification` require that a JSON body is sent as shown below:
 
 ````bash
-curl -H "Content-Type: application/json" -X POST -d '{"userData": { ... }, "userQuery": { ... } }' /authentication-key/notification
+curl -H "Content-Type: application/json" -X POST -d '{ "notification": { ... }, "userQuery": { ... } }' /authentication-key/notification
 ````
 
 And the response would look something like:

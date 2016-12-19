@@ -31,7 +31,7 @@ const db 									=	require('./lib/db.js');
 const cleanupFrequency		=	60; //seconds
 const url = require('url');
 const isloggedin = require('./lib/isloggedin.js');
-const log = require('./lib/metrics.js')
+const log = require('./lib/metrics.js');
 
 // Use Passport to provide basic HTTP auth when locked down
 const passport = require('passport');
@@ -546,3 +546,5 @@ dbSetup(() => {
 	});
 
 });
+
+require("cf-deployment-tracker-client").track();

@@ -1,5 +1,8 @@
 (function() {
   window.addEventListener('DOMContentLoaded', function () {
+    
+    var sns;
+
     var shuffle = function(a) {
       var j, x, i
       for (i = a.length; i; i--) {
@@ -18,7 +21,8 @@
         return {
           users: {},
           connected: 0,
-          sent: 0
+          sent: 0,
+          sns: null
         }
       },
 
@@ -26,11 +30,15 @@
         this.initStatus()
       },
 
+      destroyed: function() {
+        this.sns.disconnect();
+      },
+
       methods: {
         initStatus: function() {
           var _this = this
-
-          new SNSClient('demokey', {
+          
+          this.sns = new SNSClient('demokey', {
             userData: {
               type: '_ui_status'
             },
@@ -70,6 +78,7 @@
               }
               _this.$set('sent', sent)
             })
+
         }
       }
     })
@@ -81,7 +90,8 @@
         return {
           keys: [],
           key: '',
-          hostname: ''
+          hostname: '',
+          demokey: false
         }
       },
 
@@ -102,6 +112,15 @@
               _this.$set('keys', keys)
               _this.$set('key', '')
               _this.$set('hostname', '')
+              _this.$set('demokey', false)
+              
+              // determine if we have a demo key set
+              keys.forEach(function(key) {
+                if (key.key == "demokey" && key.hostname == location.hostname) {
+                  _this.$set('demokey', true)
+                }
+              })
+
             })          
         },
         deleteKey: function(id) {
@@ -129,6 +148,18 @@
                 this.initAdmin()
               }
             })
+        },
+        createDemoKey: function() {
+          
+          var newkey = JSON.stringify({hostname: location.hostname, key: "demokey"})
+          this.$http
+          .post('/authkey', newkey)
+          .then(function(res) {
+            if (res.ok) {
+              this.initAdmin()
+            }
+          })
+
         }
       }
     })
@@ -139,7 +170,18 @@
     router.map({
       '/': {
         component: Vue.extend({
-          template: '#about'
+          template: '#about',
+          ready: function() {
+            
+            // set the script hosts to the correct values
+            var s = document.getElementById('chat_sample')
+            s.innerText = s.innerText.replace(/\[\[HOST\]\]/g, location.protocol + '//' + location.host)
+
+            // set the demo host to the correct values
+            var s = document.getElementById('demo_host');
+            s.innerText = location.hostname;
+
+          }
         })
       },
       '/status': {

@@ -29,12 +29,56 @@ By default, SNS will assume a local instance of RethinkDB is running, but you ca
 export RETHINKDB_URL='rethinkdb://username:password@hostname.com:28015'
 ```
 
-To run the SNS app, simply do `node app.js`. On first run of the app, all necessary DB tables will be created.
+To run the SNS app, simply do `npm start`. On first run of the app, all necessary DB tables will be created.
+
+## Using the SNS in your own app
+You can install SNS and run it from your own Node.js application by installing the module:
+
+```
+npm install --save simple-notification-service
+```
+
+And then "require" it into your app:
+
+```js
+const sns = require('simple-notification-service')()
+```
+
+It will pick up any environment variables for configuration as mentioned above, and you can provide some other options as shown below:
+
+```js
+const path = require('path');
+const router = require('express').Router();
+
+router.get('/my/route', function(req, res) {
+
+  res.send({ foo: "bar" })
+
+})
+
+var opts = {
+  production: true,
+  static: path.join(__dirname, './public'),
+  authentication: [
+    { hostname: 'localhost', key: 'my-api-key' }
+  ],
+  router: router
+}
+
+const sns = require('simple-notification-service')(opts);
+```
+
+* `production` - when set to true, disables all of the SNS demo apps (default `false`)
+* `static` - provide a static directory for Express (default `null` - this will put out the SNS admin)
+* `authentication` - an array of `hostname`/`key` pairs to create API keys to allow SNS access (default is empty array)
+* `router` - custom Express routes for your application (default no custom routes)
+
+## Client side
 
 Finally, once the service is running, you will need to include the client library into your HTML. You can do so very easily as so, making sure you change the hostname to match your particular instance of the SNS app:
 
 ```html
-<script src="http://sns-hostname.com/client.js"></script>
+<script src="http://sns-hostname.com/sns-client.js"></script>
 ```
 
 And now your app is SNS enabled! Keep on reading to find out how to use the SNS in your app.

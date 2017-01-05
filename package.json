@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git+https://github.com/ibm-cds-labs/simple-notification-service.git"
   },
-  "author": "MattCollins84",
+  "author": "MattCollins84 <matt@strikesandgutters.com>",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/ibm-cds-labs/simple-notification-service/issues"

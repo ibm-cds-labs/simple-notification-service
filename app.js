@@ -5,7 +5,8 @@ module.exports = (opts) => {
 	opts = opts || {
 		production: false,
 		static: null,
-		router: null
+		router: null,
+		authentication: []
 	};
 
 	/*****
@@ -20,6 +21,10 @@ module.exports = (opts) => {
 	const cfenv = require('cfenv');
 	const	appEnv = cfenv.getAppEnv();
 	const dbSetup = require('./lib/config.js').dbSetup;
+
+	if (opts.router) {
+		app.use(opts.router)
+	}
 
 	/*****
 		Bodyparser etc... for POST requests
@@ -40,6 +45,7 @@ module.exports = (opts) => {
 	const url = require('url');
 	const isloggedin = require('./lib/isloggedin.js');
 	const log = require('./lib/metrics.js');
+	const path = require('path');
 
 	// Use Passport to provide basic HTTP auth when locked down
 	const passport = require('passport');
@@ -462,23 +468,33 @@ module.exports = (opts) => {
 	*****/
 	if (opts.production === false) {
 		app.get('/chat', (req, res) => {
-		  res.sendFile(__dirname + '/public/demo/chat/chat.html');
+		  res.sendFile(path.join(__dirname + 'public', 'demo', 'chat', 'chat.html'));
 		});
 
 		app.get('/soccer', (req, res) => {
-		  res.sendFile(__dirname + '/public/demo/soccer/soccer.html');
+		  res.sendFile(path.join(__dirname + 'public', 'demo', 'soccer', 'soccer.html'));
 		});
 
 		app.get('/soccer/admin', (req, res) => {
-		  res.sendFile(__dirname + '/public/demo/soccer/admin.html');
+		  res.sendFile(path.join(__dirname, 'public', 'demo', 'soccer', 'admin.html'));
 		});
 	}
 
-	// serve static files from /public
-	app.use(express.static(__dirname + '/public'));
+	app.get('/sns-client.js', (req, res) => {
+		res.sendFile(path.join(__dirname, 'public', 'client.js'));
+	});
+
+	// serve static files from /public if not otherwise provided in opts
+	if (opts.static === null) {
+		app.use(express.static(path.join(__dirname, 'public')));
+	}
+
+	else {
+		app.use(express.static(opts.static));
+	}
 
 	// attempt to set up the DB before running the app.
-	dbSetup(() => {
+	dbSetup(opts.authentication, () => {
 
 		/*****
 			RethinkDB changefeeds
@@ -551,7 +567,7 @@ module.exports = (opts) => {
 			Listening
 		*****/
 		http.listen(appEnv.port, ( appEnv.bind == "localhost" ? null : appEnv.bind ), () => {
-		  console.log(`listening on ${appEnv.url || publicIP}`);
+		  console.log(`listening on ${appEnv.url}`);
 		});
 
 	});

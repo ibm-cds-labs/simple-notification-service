@@ -12,6 +12,6 @@ applications:
   host: simple-notification-service-${random-word}
   domain: mybluemix.net
   random-route: true
-  command: node app.js
+  command: node ./bin/www
   services:
   - sns-rethinkdb

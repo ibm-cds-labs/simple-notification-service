@@ -224,7 +224,7 @@ module.exports = (opts) => {
 
 	    db.authenticateLite(conn, req.params.key, (err, matches) => {
 
-	    	if (matches.length !== 1) {
+	    	if (matches.length > 0) {
 	    		return res.status(404).send({
 	    			success: false,
 	    			error: "SNS: Failed to authenticate"

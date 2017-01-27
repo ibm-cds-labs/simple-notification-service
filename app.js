@@ -468,11 +468,11 @@ module.exports = (opts) => {
 	*****/
 	if (opts.production === false) {
 		app.get('/chat', (req, res) => {
-		  res.sendFile(path.join(__dirname + 'public', 'demo', 'chat', 'chat.html'));
+		  res.sendFile(path.join(__dirname, 'public', 'demo', 'chat', 'chat.html'));
 		});
 
 		app.get('/soccer', (req, res) => {
-		  res.sendFile(path.join(__dirname + 'public', 'demo', 'soccer', 'soccer.html'));
+		  res.sendFile(path.join(__dirname, 'public', 'demo', 'soccer', 'soccer.html'));
 		});
 
 		app.get('/soccer/admin', (req, res) => {

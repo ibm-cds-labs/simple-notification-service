@@ -494,7 +494,13 @@ module.exports = (opts) => {
 	}
 
 	// attempt to set up the DB before running the app.
-	dbSetup(opts.authentication, () => {
+	dbSetup(opts.authentication, (err) => {
+
+		// if the DB failed to setup, then exit.
+		if (err) {
+			console.log(err);
+			process.exit(0);
+		}
 
 		/*****
 			RethinkDB changefeeds

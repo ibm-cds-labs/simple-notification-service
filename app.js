@@ -47,6 +47,10 @@ module.exports = (opts) => {
 	const log = require('./lib/metrics.js');
 	const path = require('path');
 
+	// app events
+	const events = require('events')
+	app.events = new events.EventEmitter();
+
 	// Use Passport to provide basic HTTP auth when locked down
 	const passport = require('passport');
 	passport.use(isloggedin.passportStrategy());
@@ -574,6 +578,7 @@ module.exports = (opts) => {
 		*****/
 		http.listen(appEnv.port, ( appEnv.bind == "localhost" ? null : appEnv.bind ), () => {
 		  console.log(`listening on ${appEnv.url}`);
+		  app.events.emit('started', appEnv.url)
 		});
 
 	});

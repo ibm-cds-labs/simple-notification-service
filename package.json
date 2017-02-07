@@ -1,6 +1,6 @@
 {
   "name": "simple-notification-service",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "A realtime microservice to allow the sending of realtime notifications between apps",
   "main": "app.js",
   "scripts": {

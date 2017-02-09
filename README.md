@@ -29,12 +29,56 @@ By default, SNS will assume a local instance of RethinkDB is running, but you ca
 export RETHINKDB_URL='rethinkdb://username:password@hostname.com:28015'
 ```
 
-To run the SNS app, simply do `node app.js`. On first run of the app, all necessary DB tables will be created.
+To run the SNS app, simply do `npm start`. On first run of the app, all necessary DB tables will be created.
+
+## Using the SNS in your own app
+You can install SNS and run it from your own Node.js application by installing the module:
+
+```
+npm install --save simple-notification-service
+```
+
+And then "require" it into your app:
+
+```js
+const sns = require('simple-notification-service')()
+```
+
+It will pick up any environment variables for configuration as mentioned above, and you can provide some other options as shown below:
+
+```js
+const path = require('path');
+const router = require('express').Router();
+
+router.get('/my/route', function(req, res) {
+
+  res.send({ foo: "bar" })
+
+})
+
+var opts = {
+  production: true,
+  static: path.join(__dirname, './public'),
+  authentication: [
+    { hostname: 'localhost', key: 'my-api-key' }
+  ],
+  router: router
+}
+
+const sns = require('simple-notification-service')(opts);
+```
+
+* `production` - when set to true, disables all of the SNS demo apps (default `false`)
+* `static` - provide a static directory for Express (default `null` - this will put out the SNS admin)
+* `authentication` - an array of `hostname`/`key` pairs to create API keys to allow SNS access (default is empty array)
+* `router` - custom Express routes for your application (default no custom routes)
+
+## Client side
 
 Finally, once the service is running, you will need to include the client library into your HTML. You can do so very easily as so, making sure you change the hostname to match your particular instance of the SNS app:
 
 ```html
-<script src="http://sns-hostname.com/client.js"></script>
+<script src="http://sns-hostname.com/sns-client.js"></script>
 ```
 
 And now your app is SNS enabled! Keep on reading to find out how to use the SNS in your app.
@@ -169,7 +213,7 @@ Notifications can also be sent by using the `POST /authentication-key/notificati
 Requests to the `POST /authentication-key/notification` require that a JSON body is sent as shown below:
 
 ````bash
-curl -H "Content-Type: application/json" -X POST -d '{"userData": { ... }, "userQuery": { ... } }' /authentication-key/notification
+curl -H "Content-Type: application/json" -X POST -d '{ "notification": { ... }, "userQuery": { ... } }' /authentication-key/notification
 ````
 
 And the response would look something like:
@@ -207,5 +251,41 @@ And the response would look something like:
 }
 ````
 
+## Demos
+The Simple Notification Service comes with two demos built in, accessible from the homepage.
+
+### Chat
+The first demo is a chat room. This demo showcases all of the features of the SNS - send/receive messages, detect and handle connections/disconnections, and using historical data to preserve chat history.
+
+There is also a copy & paste widget to add chat to any website.
+
+### Live Soccer Scores
+The second demo showcases the ability of the SNS to direct notifications to specific users.
+
+Here you can use an adin panel to update the scores of two soccer matches. End users will either see all updates, or match specific updates, depending on the page they are visiting.
+
 ## Contributing
 The projected is released under the Apache-2.0 license so forks, issues and pull requests are very welcome.
+
+## Privacy Notice
+
+Sample web applications that include this package may be configured to track deployments to IBM Bluemix and other Cloud Foundry platforms. The following information is sent to a Deployment Tracker service on each deployment:
+
+* Node.js package version
+* Node.js repository URL
+* Application Name (application_name)
+* Space ID (space_id)
+* Application Version (application_version)
+* Application URIs (application_uris)
+* Labels of bound services
+* Number of instances for each bound service and associated plan information
+
+This data is collected from the package.json file in the sample application and the VCAP_APPLICATION and VCAP_SERVICES environment variables in IBM Bluemix and other Cloud Foundry platforms. This data is used by IBM to track metrics around deployments of sample applications to IBM Bluemix to measure the usefulness of our examples, so that we can continuously improve the content we offer to you. Only deployments of sample applications that include code to ping the Deployment Tracker service will be tracked.
+
+### Disabling Deployment Tracking
+
+To disable deployment tracking, please remove or comment out the following line from `app.js`:
+
+````javascript
+require("cf-deployment-tracker-client").track();
+````

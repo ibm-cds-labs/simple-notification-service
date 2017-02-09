@@ -1,25 +1,26 @@
 {
   "name": "simple-notification-service",
-  "version": "1.0.0",
+  "version": "2.0.3",
   "description": "A realtime microservice to allow the sending of realtime notifications between apps",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js"
+    "start": "node ./bin/www"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MattCollins84/simple-notification-service.git"
+    "url": "git+https://github.com/ibm-cds-labs/simple-notification-service.git"
   },
-  "author": "MattCollins84",
+  "author": "MattCollins84 <matt@strikesandgutters.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/MattCollins84/simple-notification-service/issues"
+    "url": "https://github.com/ibm-cds-labs/simple-notification-service/issues"
   },
-  "homepage": "https://github.com/MattCollins84/simple-notification-service#readme",
+  "homepage": "https://github.com/ibm-cds-labs/simple-notification-service#readme",
   "dependencies": {
     "async": "^2.0.1",
     "body-parser": "^1.15.2",
+    "cf-deployment-tracker-client": "^0.1.2",
     "cfenv": "^1.0.3",
     "cors": "^2.8.1",
     "express": "^4.14.0",

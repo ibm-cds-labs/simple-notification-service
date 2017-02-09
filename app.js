@@ -1,223 +1,136 @@
 "use strict"
 
-/*****
-	Express and Socket.IO
-*****/
-const express = require('express');
-const app = express();
-const cors = require('cors');
-const http = require('http').Server(app);
-const io = require('socket.io')(http);
-const fs = require('fs');
-const cfenv = require('cfenv');
-const	appEnv = cfenv.getAppEnv();
-const dbSetup = require('./lib/config.js').dbSetup;
+module.exports = (opts) => {
 
-/*****
-	Bodyparser etc... for POST requests
-*****/
-const bodyParser = require('body-parser');
-const bpJSON = bodyParser.json();
-const bpUrlencoded = bodyParser.urlencoded({ extended: true});
+	opts = opts || {
+		production: false,
+		static: null,
+		router: null,
+		authentication: []
+	};
 
-/*****
-	Other stuff
-*****/
-const async = require('async');
-const hash = require('./lib/hash.js');
-const connected = require('./lib/connected.js')
-const createSingleHash 		= hash.createSingleHash;
-const db 									=	require('./lib/db.js');
-const cleanupFrequency		=	60; //seconds
-const url = require('url');
-const isloggedin = require('./lib/isloggedin.js');
-const log = require('./lib/metrics.js')
+	/*****
+		Express and Socket.IO
+	*****/
+	const express = require('express');
+	const app = express();
+	const cors = require('cors');
+	const http = require('http').Server(app);
+	const io = require('socket.io')(http);
+	const fs = require('fs');
+	const cfenv = require('cfenv');
+	const	appEnv = cfenv.getAppEnv();
+	const dbSetup = require('./lib/config.js').dbSetup;
 
-// Use Passport to provide basic HTTP auth when locked down
-const passport = require('passport');
-passport.use(isloggedin.passportStrategy());
-
-/*****
-	RethinkDB
-*****/
-const r = require("rethinkdb");
-const rOpts = require('./lib/config.js').connection
-
-/*****
-	Service Discovery
-*****/
-
-app.locals = {
-  discovery: ( process.env.ETCD_URL ? true : false ),
-  metrics: {
-    enabled: false,
-    name: null,
-    host: null
-  }
-};
-
-var registry = require('./lib/discovery.js')(app.locals);
-
-/*****
-	API endpoints
-*****/
-
-// create a new authkey
-// requires HTTP auth if lockdown=true
-app.post('/authkey', isloggedin.auth, bpJSON, (req, res) => {
-
-	// make sure we have a body
-	if (typeof req.body !== "object" || req.body === null) {
-		return res.status(404).send({
-			success: false
-		})
+	if (opts.router) {
+		app.use(opts.router)
 	}
 
-	// parse the values for hostname and key
-	let hostname = req.body.hostname || null
-	let key = req.body.key || null
+	/*****
+		Bodyparser etc... for POST requests
+	*****/
+	const bodyParser = require('body-parser');
+	const bpJSON = bodyParser.json();
+	const bpUrlencoded = bodyParser.urlencoded({ extended: true});
 
-	if (hostname === null || key === null) {
-		return res.status(404).send({
-			success: false,
-			error: "You must supply both a hostname and a key"
-		})
-	}
+	/*****
+		Other stuff
+	*****/
+	const async = require('async');
+	const hash = require('./lib/hash.js');
+	const connected = require('./lib/connected.js')
+	const createSingleHash 		= hash.createSingleHash;
+	const db 									=	require('./lib/db.js');
+	const cleanupFrequency		=	60; //seconds
+	const url = require('url');
+	const isloggedin = require('./lib/isloggedin.js');
+	const log = require('./lib/metrics.js');
+	const path = require('path');
 
-	// force http(s) protocol at the beginning if not present
-	// and make sure we have a hostname
-	if (hostname.match(/^https?:\/\//) === null) {
-		hostname = `http://${hostname}`
-	}
+	// app events
+	const events = require('events')
+	app.events = new events.EventEmitter();
 
-	let h = url.parse(hostname);
+	// Use Passport to provide basic HTTP auth when locked down
+	const passport = require('passport');
+	passport.use(isloggedin.passportStrategy());
 
-	if (h.hostname === null) {
-		return res.status(404).send({
-			success: false,
-			error: "You must supply a valid hostname"
-		})
-	}
+	/*****
+		RethinkDB
+	*****/
+	const r = require("rethinkdb");
+	const rOpts = require('./lib/config.js').connection
 
-	// connect to DB and insert new record
-	r.connect(rOpts, (err, conn) => {
+	/*****
+		Service Discovery
+	*****/
 
-		if (err) return res.status(404).send({
-			success: false,
-			error: "SNS: Failed to connect to database"
-		});
+	app.locals = {
+	  discovery: ( process.env.ETCD_URL ? true : false ),
+	  metrics: {
+	    enabled: false,
+	    name: null,
+	    host: null
+	  }
+	};
 
-		let data = {
-			hostname: h.hostname,
-			key: key
+	var registry = require('./lib/discovery.js')(app.locals);
+
+	/*****
+		API endpoints
+	*****/
+
+	// create a new authkey
+	// requires HTTP auth if lockdown=true
+	app.post('/authkey', isloggedin.auth, bpJSON, (req, res) => {
+
+		// make sure we have a body
+		if (typeof req.body !== "object" || req.body === null) {
+			return res.status(404).send({
+				success: false
+			})
 		}
 
-    db.createAuthKey(conn, data, (err, cursor) => {
+		// parse the values for hostname and key
+		let hostname = req.body.hostname || null
+		let key = req.body.key || null
 
-			conn.close();
+		if (hostname === null || key === null) {
+			return res.status(404).send({
+				success: false,
+				error: "You must supply both a hostname and a key"
+			})
+		}
 
-			return res.send({
-				success: ( err ? false : true )
+		// force http(s) protocol at the beginning if not present
+		// and make sure we have a hostname
+		if (hostname.match(/^https?:\/\//) === null) {
+			hostname = `http://${hostname}`
+		}
+
+		let h = url.parse(hostname);
+
+		if (h.hostname === null) {
+			return res.status(404).send({
+				success: false,
+				error: "You must supply a valid hostname"
+			})
+		}
+
+		// connect to DB and insert new record
+		r.connect(rOpts, (err, conn) => {
+
+			if (err) return res.status(404).send({
+				success: false,
+				error: "SNS: Failed to connect to database"
 			});
 
-		});
-
-	});
-
-})
-
-// delete authkey by unique id
-// requires HTTP auth if lockdown=true
-app.delete('/authkey/:id', isloggedin.auth, (req, res) => {
-
-	// connect to DB and delete record
-	r.connect(rOpts, (err, conn) => {
-
-		if (err) return res.status(404).send({
-			success: false,
-			error: "SNS: Failed to connect to database"
-		});
-
-    db.deleteAuthKey(conn, req.params.id, (err, cursor) => {
-
-			conn.close();
-
-			return res.send({
-				success: ( err ? false : true )
-			});
-
-		});
-
-	});
-
-})
-
-// get list of authkeys
-// requires HTTP auth if lockdown=true
-app.get('/authkeys', isloggedin.auth, (req, res) => {
-
-	r.connect(rOpts, (err, conn) => {
-
-		if (err) return res.status(404).send({
-			success: false,
-			error: "SNS: Failed to connect to database"
-		});
-
-    db.getAuthKeys(conn, (err, keys) => {
-
-			conn.close();
-
-			if (err) {
-				return res.status(404).send({
-					success: false,
-					error: err
-				});
+			let data = {
+				hostname: h.hostname,
+				key: key
 			}
 
-			return res.send({
-				success: true,
-				keys: keys
-			});
-
-		});
-
-	});
-
-});
-
-// POST a new notification via API
-// requires valid API key
-app.post('/:key/notification', cors(), bpJSON, (req, res) => {
-
-	if (typeof req.body !== "object" || req.body === null) {
-		return res.status(404).send({
-			success: false
-		})
-	}
-
-	let query = req.body.userQuery || {};
-	let data 	= req.body.notification || {};
-
-	// get our item in 'key-value' style from the query
-	let item = createSingleHash(query);
-
-	r.connect(rOpts, (err, conn) => {
-
-		if (err) return res.status(404).send({
-			success: false,
-			error: "SNS: Failed to connect to database"
-		});
-
-    db.authenticateLite(conn, req.params.key, (err, matches) => {
-
-    	if (matches.length !== 1) {
-    		return res.status(404).send({
-    			success: false,
-    			error: "SNS: Failed to authenticate"
-    		})
-    	}
-
-    	db.saveMessage(conn, item, data, (err, cursor) => {
+	    db.createAuthKey(conn, data, (err, cursor) => {
 
 				conn.close();
 
@@ -229,334 +142,451 @@ app.post('/:key/notification', cors(), bpJSON, (req, res) => {
 
 		});
 
-	});
+	})
 
-});
+	// delete authkey by unique id
+	// requires HTTP auth if lockdown=true
+	app.delete('/authkey/:id', isloggedin.auth, (req, res) => {
 
-// GET historical notifications via API
-// requires valid API key
-app.get('/:key/historical', cors(), (req, res) => {
-
-	r.connect(rOpts, (err, conn) => {
-
-    if (err) return res.status(404).send({
-			success: false,
-			error: "SNS: Failed to connect to database"
-		});
-
-    db.authenticateLite(conn, req.params.key, (err, matches) => {
-
-    	if (matches.length !== 1) {
-    		return res.status(404).send({
-    			success: false,
-    			error: "SNS: Failed to authenticate"
-    		});
-    	}
-
-    	db.getHistorical(conn, req.query, (err, messages) => {
-
-	    	if (err) return res.status(404).send({
-	    		success: false,
-	    		error: err
-	    	});
-
-	    	return res.send({
-	    		success: true,
-	    		notifications: messages.map(msg => msg.message)
-	    	});
-
-	    });
-
-    }); 
-
-  });
-
-});
-
-// GET count of sent notifications via API
-// requires valid API key
-app.get('/:key/count', cors(), (req, res) => {
-
-	r.connect(rOpts, (err, conn) => {
-
-    if (err) return res.status(404).send({
-			success: false,
-			error: "SNS: Failed to connect to database"
-		});
-
-    db.authenticateLite(conn, req.params.key, (err, matches) => {
-
-    	if (matches.length !== 1) {
-    		return res.status(404).send({
-    			success: false,
-    			error: "SNS: Failed to authenticate"
-    		});
-    	}
-
-    	db.getMessageCount(conn, (err, count) => {
-
-	    	if (err) return res.status(404).send({
-	    		success: false,
-	    		error: err
-	    	})
-
-	    	res.send({
-	    		success: true,
-	    		count: count
-	    	});
-
-	    });
-
-    });
-
-  });
-
-});
-
-/*****
-	IO Stuff
-*****/
-io.on('connect', socket => {
-
-	console.log(`${socket.id} connected...`)
-	connected.push(socket.id);
-	log(app.locals.metrics, { action: "connected", id: encodeURIComponent(socket.id) })
-
-	// flag user as being updated when we receive a heartbeat
-	// this will help us tidy up the users table later
-	socket.conn.on('heartbeat', function() {
-    
-    r.connect(rOpts, (err, conn) => {
-
-    	if (err) return;
-
-    	db.updateHeartbeat(conn, socket.id, () => {
-    		conn.close()
-    	})
-
-    });
-
-  });
-
-	// Client supplies descriptive data about themselves (userData)
-	// can also supply a query that describes other users they care about (userQuery)
-	socket.on('myData', data => {
-
-		// make sure data is an object
-		if (typeof data === "undefined" || data === null) {
-			data = {}
-		}
-
-		// and that we have some user data
-		if (data.userData === null || typeof data.userData !== "object" || Array.isArray(data.userData)) {
-			data.userData = {};
-		}
-
-		data.userData._socket_id = socket.id
-
-		// authenticate, and if fine
-		// stash them in the DB
+		// connect to DB and delete record
 		r.connect(rOpts, (err, conn) => {
 
-			if (err) return;
+			if (err) return res.status(404).send({
+				success: false,
+				error: "SNS: Failed to connect to database"
+			});
 
-			let actions = {};
+	    db.deleteAuthKey(conn, req.params.id, (err, cursor) => {
 
-			actions.authenticate = (callback) => {
+				conn.close();
 
-				db.authenticate(conn, data.authentication || null, callback)
+				return res.send({
+					success: ( err ? false : true )
+				});
 
-			}
+			});
 
-			// insert the user
-			actions.insertUser = (callback) => {
+		});
 
-				db.insertUser(conn, data, socket.id, callback)
+	})
 
-			}
+	// get list of authkeys
+	// requires HTTP auth if lockdown=true
+	app.get('/authkeys', isloggedin.auth, (req, res) => {
 
-			// find who else is connected that we care about
-			actions.fetchConnected = (callback) => {
+		r.connect(rOpts, (err, conn) => {
 
-				db.fetchConnected(conn, data, socket.id, callback)
+			if (err) return res.status(404).send({
+				success: false,
+				error: "SNS: Failed to connect to database"
+			});
 
-			}
+	    db.getAuthKeys(conn, (err, keys) => {
 
-			async.series(actions, (err, results) => {
-				
 				conn.close();
 
 				if (err) {
-					socket.emit('authenticationFail')
-					socket.disconnect()
-					return;
+					return res.status(404).send({
+						success: false,
+						error: err
+					});
 				}
 
-				// send back a list of currently connected users that match the userQuery
-				if (typeof results.fetchConnected == "object" && results.fetchConnected.length >= 0) {
-					socket.emit('currentUsers', results.fetchConnected)
-				}
+				return res.send({
+					success: true,
+					keys: keys
+				});
 
+			});
+
+		});
+
+	});
+
+	// POST a new notification via API
+	// requires valid API key
+	app.post('/:key/notification', cors(), bpJSON, (req, res) => {
+
+		if (typeof req.body !== "object" || req.body === null) {
+			return res.status(404).send({
+				success: false
 			})
+		}
 
-		})
-
-	})
-
-	// when the socket disconnects, remove by socket ID
-	socket.on('disconnect', () => {
-		
-		console.log(`${socket.id} disconnected...`);
-		connected.remove(socket.id);
-		log(app.locals.metrics, { action: "disconnected", id: encodeURIComponent(socket.id) })
-
-		r.connect(rOpts, (err, conn) => {
-
-			db.deleteUser(conn, socket.id, (err, success) => {
-				conn.close();
-			})
-
-		})
-			
-	})
-
-	// when the client sends a message
-	// determine the Socket IDs to send it to
-	// store this data in the messages table
-	socket.on('notification', msg => {
-
-		let query = msg.query;
-		let data 	= msg.data;
+		let query = req.body.userQuery || {};
+		let data 	= req.body.notification || {};
 
 		// get our item in 'key-value' style from the query
 		let item = createSingleHash(query);
 
 		r.connect(rOpts, (err, conn) => {
 
-			if (err) return;
+			if (err) return res.status(404).send({
+				success: false,
+				error: "SNS: Failed to connect to database"
+			});
 
-			db.saveMessage(conn, item, data, (err, cursor) => {
+	    db.authenticateLite(conn, req.params.key, (err, matches) => {
 
-				conn.close();
+	    	if (matches.length == 0) {
+	    		return res.status(404).send({
+	    			success: false,
+	    			error: "SNS: Failed to authenticate"
+	    		})
+	    	}
 
-				return;
+	    	db.saveMessage(conn, item, data, (err, cursor) => {
 
-			})
+					conn.close();
 
-		})
+					return res.send({
+						success: ( err ? false : true )
+					});
 
-	})
+				});
 
-});
+			});
 
-/*****
-	FRONT END
-*****/
+		});
 
-app.get('/chat', (req, res) => {
-  res.sendFile(__dirname + '/public/chat.html');
-});
+	});
 
-app.get('/soccer', (req, res) => {
-  res.sendFile(__dirname + '/public/soccer.html');
-});
+	// GET historical notifications via API
+	// requires valid API key
+	app.get('/:key/historical', cors(), (req, res) => {
 
-app.get('/soccer/admin', (req, res) => {
-  res.sendFile(__dirname + '/public/soccer-admin.html');
-});
+		r.connect(rOpts, (err, conn) => {
 
-app.get('/soccer/:id', (req, res) => {
-  res.sendFile(__dirname + '/public/soccer_match.html');
-});
+	    if (err) return res.status(404).send({
+				success: false,
+				error: "SNS: Failed to connect to database"
+			});
 
-// requires HTTP auth if lockdown=true 
-app.get('/status', isloggedin.auth, (req, res) => {
-  res.sendFile(__dirname + '/public/status.html');
-});
+	    db.authenticateLite(conn, req.params.key, (err, matches) => {
 
-// requires HTTP auth if lockdown=true
-app.get('/admin', isloggedin.auth, (req, res) => {
-  res.sendFile(__dirname + '/public/admin.html');
-});
+	    	if (matches.length == 0) {
+	    		return res.status(404).send({
+	    			success: false,
+	    			error: "SNS: Failed to authenticate"
+	    		});
+	    	}
 
-// serve static files from /public
-app.use(express.static(__dirname + '/public'));
+	    	db.getHistorical(conn, req.query, (err, messages) => {
 
-// attempt to set up the DB before running the app.
-dbSetup(() => {
+		    	if (err) return res.status(404).send({
+		    		success: false,
+		    		error: err
+		    	});
+
+		    	return res.send({
+		    		success: true,
+		    		notifications: messages.map(msg => msg.message)
+		    	});
+
+		    });
+
+	    }); 
+
+	  });
+
+	});
+
+	// GET count of sent notifications via API
+	// requires valid API key
+	app.get('/:key/count', cors(), (req, res) => {
+
+		r.connect(rOpts, (err, conn) => {
+
+	    if (err) return res.status(404).send({
+				success: false,
+				error: "SNS: Failed to connect to database"
+			});
+
+	    db.authenticateLite(conn, req.params.key, (err, matches) => {
+
+	    	if (matches.length == 0) {
+	    		return res.status(404).send({
+	    			success: false,
+	    			error: "SNS: Failed to authenticate"
+	    		});
+	    	}
+
+	    	db.getMessageCount(conn, (err, count) => {
+
+		    	if (err) return res.status(404).send({
+		    		success: false,
+		    		error: err
+		    	})
+
+		    	res.send({
+		    		success: true,
+		    		count: count
+		    	});
+
+		    });
+
+	    });
+
+	  });
+
+	});
 
 	/*****
-		RethinkDB changefeeds
+		IO Stuff
 	*****/
+	io.on('connect', socket => {
 
-	r.connect(rOpts, (err, conn) => {
+		console.log(`${socket.id} connected...`)
+		connected.push(socket.id);
+		log(app.locals.metrics, { action: "connected", id: encodeURIComponent(socket.id) })
 
-		if (err) return;
+		// flag user as being updated when we receive a heartbeat
+		// this will help us tidy up the users table later
+		socket.conn.on('heartbeat', function() {
+	    
+	    r.connect(rOpts, (err, conn) => {
 
-		const msgStream = db.messageStream(conn);
+	    	if (err) return;
 
-		msgStream.on('notification', (data) => {
-			if (!connected.exists(data.id)) return false;
-			io.to(data.id).emit('notification', data.msg);
-			log(app.locals.metrics, { action: "notification", id: encodeURIComponent(data.id), data: JSON.stringify(data.msg) })
-		})
+	    	db.updateHeartbeat(conn, socket.id, () => {
+	    		conn.close()
+	    	})
 
-		msgStream.on('notificationPing', () => {
-			io.emit('notificationPing');
-		})
+	    });
 
-		const userStream = db.userStream(conn);
+	  });
 
-		userStream.on('connectingUser', (user) => {
-			
-			db.sendConnected(conn, user, (err, users) => {
+		// Client supplies descriptive data about themselves (userData)
+		// can also supply a query that describes other users they care about (userQuery)
+		socket.on('myData', data => {
 
-				// send this clients userData to any connected user whose userQuery matches this clients userData
-				if (typeof users == "object" && users.length >= 0) {
-					users.forEach(id => {
-						if (!connected.exists(id)) return false;
-						io.to(id).emit("connectedUser", user.userData)
-						log(app.locals.metrics, { action: "connectionNotification", id: encodeURIComponent(id) })
-					})
+			// make sure data is an object
+			if (typeof data === "undefined" || data === null) {
+				data = {}
+			}
+
+			// and that we have some user data
+			if (data.userData === null || typeof data.userData !== "object" || Array.isArray(data.userData)) {
+				data.userData = {};
+			}
+
+			data.userData._socket_id = socket.id
+
+			// authenticate, and if fine
+			// stash them in the DB
+			r.connect(rOpts, (err, conn) => {
+
+				if (err) return;
+
+				let actions = {};
+
+				actions.authenticate = (callback) => {
+
+					db.authenticate(conn, data.authentication || null, callback)
+
 				}
+
+				// insert the user
+				actions.insertUser = (callback) => {
+
+					db.insertUser(conn, data, socket.id, callback)
+
+				}
+
+				// find who else is connected that we care about
+				actions.fetchConnected = (callback) => {
+
+					db.fetchConnected(conn, data, socket.id, callback)
+
+				}
+
+				async.series(actions, (err, results) => {
+					
+					conn.close();
+
+					if (err) {
+						socket.emit('authenticationFail')
+						socket.disconnect()
+						return;
+					}
+
+					// send back a list of currently connected users that match the userQuery
+					if (typeof results.fetchConnected == "object" && results.fetchConnected.length >= 0) {
+						socket.emit('currentUsers', results.fetchConnected)
+					}
+
+				})
 
 			})
 
 		})
 
-		userStream.on('disconnectingUser', (user) => {
+		// when the socket disconnects, remove by socket ID
+		socket.on('disconnect', () => {
 			
-			db.sendDisconnected(conn, user, (err, users) => {
+			console.log(`${socket.id} disconnected...`);
+			connected.remove(socket.id);
+			log(app.locals.metrics, { action: "disconnected", id: encodeURIComponent(socket.id) })
 
-				// send this clients userData to any connected user whose userQuery matches this clients userData
-				if (typeof users == "object" && users.length >= 0) {
-					users.forEach(id => {
-						if (!connected.exists(id)) return false;
-						io.to(id).emit("disconnectedUser", user.userData)
-						log(app.locals.metrics, { action: "disconnectionNotification", id: encodeURIComponent(id) })
-					})
-				}
+			r.connect(rOpts, (err, conn) => {
+
+				db.deleteUser(conn, socket.id, (err, success) => {
+					conn.close();
+				})
 
 			})
+				
+		})
+
+		// when the client sends a message
+		// determine the Socket IDs to send it to
+		// store this data in the messages table
+		socket.on('notification', msg => {
+
+			let query = msg.query;
+			let data 	= msg.data;
+
+			// get our item in 'key-value' style from the query
+			let item = createSingleHash(query);
+
+			r.connect(rOpts, (err, conn) => {
+
+				if (err) return;
+
+				db.saveMessage(conn, item, data, (err, cursor) => {
+
+					conn.close();
+
+					return;
+
+				})
+
+			})
+
+		})
+
+	});
+
+	/*****
+		FRONT END
+	*****/
+	if (opts.production === false) {
+		app.get('/chat', (req, res) => {
+		  res.sendFile(path.join(__dirname, 'public', 'demo', 'chat', 'chat.html'));
+		});
+
+		app.get('/soccer', (req, res) => {
+		  res.sendFile(path.join(__dirname, 'public', 'demo', 'soccer', 'soccer.html'));
+		});
+
+		app.get('/soccer/admin', (req, res) => {
+		  res.sendFile(path.join(__dirname, 'public', 'demo', 'soccer', 'admin.html'));
+		});
+	}
+
+	app.get('/sns-client.js', (req, res) => {
+		res.sendFile(path.join(__dirname, 'public', 'client.js'));
+	});
+
+	// serve static files from /public if not otherwise provided in opts
+	if (opts.static === null) {
+		app.use(express.static(path.join(__dirname, 'public')));
+	}
+
+	else {
+		app.use(express.static(opts.static));
+	}
+
+	// attempt to set up the DB before running the app.
+	dbSetup(opts.authentication, (err) => {
+
+		// if the DB failed to setup, then exit.
+		if (err) {
+			console.log(err);
+			process.exit(0);
+		}
+
+		/*****
+			RethinkDB changefeeds
+		*****/
+
+		r.connect(rOpts, (err, conn) => {
+
+			if (err) return;
+
+			const msgStream = db.messageStream(conn);
+
+			msgStream.on('notification', (data) => {
+				if (!connected.exists(data.id)) return false;
+				io.to(data.id).emit('notification', data.msg);
+				log(app.locals.metrics, { action: "notification", id: encodeURIComponent(data.id), data: JSON.stringify(data.msg) })
+			})
+
+			msgStream.on('notificationPing', () => {
+				io.emit('notificationPing');
+			})
+
+			const userStream = db.userStream(conn);
+
+			userStream.on('connectingUser', (user) => {
+				
+				db.sendConnected(conn, user, (err, users) => {
+
+					// send this clients userData to any connected user whose userQuery matches this clients userData
+					if (typeof users == "object" && users.length >= 0) {
+						users.forEach(id => {
+							if (!connected.exists(id)) return false;
+							io.to(id).emit("connectedUser", user.userData)
+							log(app.locals.metrics, { action: "connectionNotification", id: encodeURIComponent(id) })
+						})
+					}
+
+				})
+
+			})
+
+			userStream.on('disconnectingUser', (user) => {
+				
+				db.sendDisconnected(conn, user, (err, users) => {
+
+					// send this clients userData to any connected user whose userQuery matches this clients userData
+					if (typeof users == "object" && users.length >= 0) {
+						users.forEach(id => {
+							if (!connected.exists(id)) return false;
+							io.to(id).emit("disconnectedUser", user.userData)
+							log(app.locals.metrics, { action: "disconnectionNotification", id: encodeURIComponent(id) })
+						})
+					}
+
+				})
+
+			})
+
+			/*****
+				Tidy up old users
+				(re-using the changefeed connection)
+			****/
+			db.removeOldUsers(conn, cleanupFrequency);
+			setInterval(() => {
+				db.removeOldUsers(conn, cleanupFrequency);
+			}, (cleanupFrequency * 1000))
 
 		})
 
 		/*****
-			Tidy up old users
-			(re-using the changefeed connection)
-		****/
-		db.removeOldUsers(conn, cleanupFrequency);
-		setInterval(() => {
-			db.removeOldUsers(conn, cleanupFrequency);
-		}, (cleanupFrequency * 1000))
+			Listening
+		*****/
+		http.listen(appEnv.port, ( appEnv.bind == "localhost" ? null : appEnv.bind ), () => {
+		  console.log(`listening on ${appEnv.url}`);
+		  app.events.emit('started', appEnv.url)
+		});
 
-	})
-
-	/*****
-		Listening
-	*****/
-	http.listen(appEnv.port, ( appEnv.bind == "localhost" ? null : appEnv.bind ), () => {
-	  console.log(`listening on ${appEnv.url || publicIP}`);
 	});
 
-});
+	require("cf-deployment-tracker-client").track();
+
+	return app;
+
+}
+
+	

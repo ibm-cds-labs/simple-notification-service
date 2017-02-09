@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Chat Demo | Simple Notification Service</title>
+
+    <link rel="stylesheet" href="/css/master.css" type="text/css">
+    <link rel="stylesheet" href="/demo/chat/chat.css" type="text/css">
+
+    <script src="/js/vue.js"></script>
+    <script src="/js/vue-resource.min.js"></script>
+    <script src="/sns-client.js"></script>
+    <script src="/demo/chat/chat.js"></script>
+  </head>
+
+  <body class="capped-layout" id="app">
+    <header class="capped-layout_cap app-banner">
+      <span class="app-banner_title">Simple Notification Service // Chat Demo</span>
+    </header>
+
+    <div class="capped-layout_body bookend-layout">
+      <div class="bookend-layout_body theme_light bg_white">
+        <chat-user v-ref:chatuser v-show="!showchat"></chat-user>
+        <chat-app v-ref:chatapp v-show="showchat"></chat-app>
+      </div>
+    </div>
+
+<!-- START template: enter name -->
+    <script type="text/x-template" id="chatuser">
+      <div id="nameform" class="grid_row five-column">
+        <div class="grid_column one">
+        </div>
+        <div class="grid_column three">
+          <section class="layout_section">
+            <form class="form" onsubmit="return false;">
+              <fieldset class="form_field">
+                <label class="form_label" for="username">What is your name?</label>
+                <input id="username" class="input_text"  type=text name="username" v-model="username" required>
+              </fieldset>
+              <div>
+                <button id="submitname" type="submit" class="button_primary" v-on:click="submitName">Start Chat</button>
+              </div>
+            </form>
+          </section>
+        </div>
+        <div class="grid_column one">
+        </div>
+      </div>
+    </script>
+<!-- END template: enter name -->
+
+<!-- START template: chat app -->
+    <script type="text/x-template" id="chatapp">
+      <div id="chat" class="grid_row five-column">
+        <div class="grid_column one">
+        </div>
+        <div class="grid_column two">
+          <section class="layout_section">
+            <h2 class="type_heading type_mark">Messages</h2>
+            <form class="form" onsubmit="return false;">
+              <fieldset class="form_field">
+                <input id="message" class="input_text"  type=text name="message" v-model="message" placeholder="Enter your message...">
+              </fieldset>
+              <div>
+                <button id="sendmessage" type="submit" class="button_primary" v-on:click="submitMessage">Send</button>
+              </div>
+            </form>
+          </section>
+          <hr>
+          <section class="layout_section">
+            <div class="chat-message" v-for="msg in messages">
+              <div class="msg-title bg_light-tint">
+                <span>{{ msg.name }}</span>
+                <span>{{ msg.ts | timestamp }}</span>
+              </div>
+              <div class="msg-body">{{ msg.msg }}</div>
+            </div>
+          </section>
+        </div>
+        <div class="grid_column one">
+          <section class="layout_section">
+            <h2 class="type_heading type_mark">Users</h2>
+            <ul class="list_unordered">
+              <li v-for="user in users">{{ user.name }}</li>
+            </ul>
+          </section>
+        </div>
+        <div class="grid_column one">
+        </div>
+      </div>
+    </script>
+<!-- END template: chat app -->
+
+  </body>
+</html>

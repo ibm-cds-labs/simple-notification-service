@@ -1,0 +1,26 @@
+
+.v-link-active:not(.top-nav) {
+	background-color: #f0f2f4;
+	box-shadow: inset 8px 0 0 0 #5aaafa;
+}
+
+.type_link {
+  cursor: pointer;
+}
+
+.input_text {
+	max-width: 21rem;
+}
+.input_narrow {
+    max-width: 10rem;
+}
+.input_wide {
+    max-width: 36rem;
+}
+.input_xwide {
+    max-width: 50rem;
+}
+
+.table_basic-container {
+  overflow: auto;
+}

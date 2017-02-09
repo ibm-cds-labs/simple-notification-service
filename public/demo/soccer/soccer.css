@@ -1,0 +1,46 @@
+
+.soccer-update {
+  border: 1px solid #d3d9dd;
+  font-size: 0.875rem;
+  font-weight: 300;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+.soccer-update-info {
+  border-color: #bce8f1;
+}
+.soccer-update-success {
+  border-color: #d6e9c6;
+}
+
+.update-title {
+  border-bottom: 1px solid #d3d9dd;
+  padding: 10px 15px;
+}
+.soccer-update-info .update-title {
+  background-color: #d9edf7;
+  border-color: #bce8f1;
+  color: #31708f;
+}
+.soccer-update-success .update-title {
+  background-color: #dff0d8;
+  border-color: #d6e9c6;
+  color: #3c763d;
+}
+
+.update-title > span:first-child {
+  font-weight: 600;
+}
+
+.update-title > span:nth-child(2) {
+  font-weight: 600;
+  margin-left: 10px;
+}
+
+.update-title > span:last-child {
+  float: right;
+}
+
+.update-body {
+  padding: 15px;
+}

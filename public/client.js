@@ -8,7 +8,7 @@
  *  SNSClient
  */
 // must capture the SNS host at load time
-var _sns_host = document.currentScript.src.replace(/\/client.js$/, '')
+var _sns_host = document.currentScript.src.replace(/\/sns-client.js$/, '');
 
 function SNSClient(key, opts) {
   
@@ -139,7 +139,15 @@ function SNSClient(key, opts) {
     
   }.bind(this);
 
+  // disconnect from the server
+  this.disconnect = function() {
+
+    this.socket.disconnect();
+
+  }.bind(this);
+
   this.events.send = this.send;
+  this.events.disconnect = this.disconnect;
 
   return this.events
 

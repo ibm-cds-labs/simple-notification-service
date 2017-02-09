@@ -29,6 +29,12 @@ By default, SNS will assume a local instance of RethinkDB is running, but you ca
 export RETHINKDB_URL='rethinkdb://username:password@hostname.com:28015'
 ```
 
+If your RethinkDB instance requires an SSL Certificate in order to get access (for instance, if you are using a Compose instance), then you will need to specify the location of your certificate via another environment variable like so:
+
+```
+export RETHINKDB_CERT='/path/to/my/cert'
+```
+
 To run the SNS app, simply do `npm start`. On first run of the app, all necessary DB tables will be created.
 
 ## Using the SNS in your own app

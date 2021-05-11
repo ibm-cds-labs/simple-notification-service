@@ -33,6 +33,6 @@
     "request": "^2.78.0",
     "rethinkdb": "^2.3.3",
     "simple-service-registry": "^0.1.1",
-    "socket.io": "^1.4.8"
+    "socket.io": "^2.4.0"
   }
 }
